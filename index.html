@@ -1,1 +1,119 @@
 
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Typing Quality Checker</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f4f7fb;color:#172033}
+header{background:#172b4d;color:white;padding:22px 7%;display:flex;justify-content:space-between;align-items:center}
+header h2{margin:0;font-size:22px}
+header span{color:#b9c9e5;font-size:13px}
+main{max-width:1050px;margin:35px auto;padding:0 18px}
+.welcome{margin-bottom:25px}
+.welcome h1{font-size:27px;margin-bottom:8px}
+.welcome p{color:#667085}
+.panel{background:white;border:1px solid #e3e9f2;border-radius:13px;padding:25px;margin-bottom:22px;box-shadow:0 4px 15px #172b4d08}
+.panel h3{margin-top:0}
+.uploads{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.upload-box{border:2px dashed #c8d4e5;border-radius:12px;padding:28px 15px;text-align:center;background:#fafcff}
+.upload-box .symbol{font-size:35px}
+.upload-box h3{margin:12px 0 7px}
+.upload-box p{font-size:13px;color:#778399}
+input[type=file]{width:100%;margin-top:12px;font-size:13px}
+.file-name{font-size:13px;color:#087b58;margin-top:12px;overflow-wrap:anywhere}
+button{border:0;border-radius:9px;background:#1765d1;color:white;padding:14px 25px;font-size:15px;font-weight:bold;cursor:pointer}
+button:hover{background:#0d50ad}
+.action{text-align:center;margin-top:24px}
+.report{min-height:90px;color:#718096;font-size:14px;line-height:1.7}
+.note{background:#fff8e8;border:1px solid #f4dfad;padding:13px;border-radius:8px;font-size:13px;color:#795b18}
+footer{text-align:center;padding:25px;color:#8a94a6;font-size:12px}
+@media(max-width:650px){.uploads{grid-template-columns:1fr}header{padding:18px;flex-direction:column;gap:8px;align-items:flex-start}}
+</style>
+</head>
+<body>
+
+<header>
+  <h2>✦ Typing Quality Checker</h2>
+  <span>Smart Document Verification</span>
+</header>
+
+<main>
+  <section class="welcome">
+    <h1>Document Quality Checker</h1>
+    <p>মূল ফাইলের সঙ্গে টাইপ করা ফাইল মিলিয়ে ভুল শনাক্ত করুন।</p>
+  </section>
+
+  <section class="panel">
+    <h3>১. আপনার ফাইল দুটি আপলোড করুন</h3>
+
+    <div class="uploads">
+      <div class="upload-box">
+        <div class="symbol">📄</div>
+        <h3>Original File</h3>
+        <p>ক্লায়েন্টের দেওয়া মূল ফাইলটি নির্বাচন করুন</p>
+        <input type="file" id="originalFile"
+        accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png">
+        <div class="file-name" id="originalName">কোনো ফাইল নির্বাচন করা হয়নি</div>
+      </div>
+
+      <div class="upload-box">
+        <div class="symbol">📝</div>
+        <h3>Typed File</h3>
+        <p>আপনার টাইপ করা ফাইলটি নির্বাচন করুন</p>
+        <input type="file" id="typedFile"
+        accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png">
+        <div class="file-name" id="typedName">কোনো ফাইল নির্বাচন করা হয়নি</div>
+      </div>
+    </div>
+
+    <div class="action">
+      <button onclick="startCompare()">Compare Documents</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h3>২. Error Report</h3>
+    <div class="report" id="report">
+      এখনো কোনো ফাইল তুলনা করা হয়নি। তুলনা সম্পন্ন হলে এখানে ভুলের রিপোর্ট দেখা যাবে।
+    </div>
+  </section>
+
+  <div class="note">
+    ⚠️ বর্তমানে এটি ওয়েবসাইটের প্রাথমিক ইন্টারফেস। ফাইল তুলনা, OCR এবং ভুল শনাক্ত করার ব্যবস্থা পরবর্তী ধাপে যুক্ত করা হবে।
+  </div>
+</main>
+
+<footer>
+  Typing Quality Checker © 2026 | Document Verification System
+</footer>
+
+<script>
+const original = document.getElementById("originalFile");
+const typed = document.getElementById("typedFile");
+
+original.addEventListener("change", function(){
+  document.getElementById("originalName").textContent =
+    this.files[0] ? this.files[0].name : "কোনো ফাইল নির্বাচন করা হয়নি";
+});
+
+typed.addEventListener("change", function(){
+  document.getElementById("typedName").textContent =
+    this.files[0] ? this.files[0].name : "কোনো ফাইল নির্বাচন করা হয়নি";
+});
+
+function startCompare(){
+  if(!original.files.length || !typed.files.length){
+    alert("দয়া করে Original File এবং Typed File দুটিই নির্বাচন করুন।");
+    return;
+  }
+  document.getElementById("report").textContent =
+    "ফাইল দুটি নির্বাচন করা হয়েছে। তুলনা করার ফিচার পরবর্তী ধাপে যুক্ত হবে।";
+}
+</script>
+
+</body>
+</html>
+
