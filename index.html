@@ -65,6 +65,11 @@ button{
 
 button:hover{background:#0d50ad}
 
+button:disabled{
+ opacity:.6;
+ cursor:not-allowed;
+}
+
 .center{text-align:center;margin-top:20px}
 
 textarea{
@@ -150,14 +155,14 @@ Original Document এবং Typed Document-এর পার্থক্য শ�
 
 <div class="upload">
 <h3>📄 Original File</h3>
-<p class="muted">মূল TXT ফাইল নির্বাচন করুন</p>
+<p class="muted">মূল TXT, PDF অথবা DOCX ফাইল নির্বাচন করুন</p>
 <input type="file" id="originalFile" accept=".txt,.pdf,.docx">
 <p id="originalName" class="muted">কোনো ফাইল নির্বাচন করা হয়নি</p>
 </div>
 
 <div class="upload">
 <h3>📝 Typed File</h3>
-<p class="muted">টাইপ করা TXT ফাইল নির্বাচন করুন</p>
+<p class="muted">টাইপ করা TXT, PDF অথবা DOCX ফাইল নির্বাচন করুন</p>
 <input type="file" id="typedFile" accept=".txt,.pdf,.docx">
 <p id="typedName" class="muted">কোনো ফাইল নির্বাচন করা হয়নি</p>
 </div>
@@ -165,7 +170,9 @@ Original Document এবং Typed Document-এর পার্থক্য শ�
 </div>
 
 <div class="center">
-<button onclick="compareFiles()">Compare Documents</button>
+<button id="compareFilesButton" onclick="compareFiles()">
+Compare Documents
+</button>
 </div>
 
 </section>
@@ -198,10 +205,10 @@ Original Document এবং Typed Document-এর পার্থক্য শ�
 
 </main>
 
-<!-- PDF Reading Library -->
+<!-- PDF Library -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
-<!-- Word DOCX Reading Library -->
+<!-- DOCX Library -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
 
 <script>
@@ -231,6 +238,7 @@ function escapeHTML(value){
  });
 }
 
+
 // Smart comparison using LCS
 function makeReport(original,typed){
 
@@ -240,7 +248,6 @@ function makeReport(original,typed){
  const n=A.length;
  const m=B.length;
 
- // LCS table
  const dp=Array.from(
   {length:n+1},
   ()=>new Uint32Array(m+1)
@@ -261,7 +268,6 @@ function makeReport(original,typed){
   }
  }
 
- // Identify differences
  let i=0,j=0;
  const missing=[];
  const extra=[];
@@ -307,7 +313,6 @@ function makeReport(original,typed){
   j++;
  }
 
- // Build report
  let html=`
  <h3>তুলনার ফলাফল</h3>
 
@@ -392,6 +397,7 @@ function makeReport(original,typed){
 }
 
 
+// Extract text from TXT, PDF and DOCX
 async function extractText(file){
 
  const name=file.name.toLowerCase();
@@ -405,15 +411,17 @@ async function extractText(file){
  if(name.endsWith(".pdf")){
 
   if(!window.pdfjsLib){
-   throw new Error("PDF library load হয়নি।");
+   throw new Error("PDF Library load হয়নি। ইন্টারনেট সংযোগ পরীক্ষা করুন।");
   }
 
-  pdfjsLib.GlobalWorkerOptions.workerSrc =
+  const pdfjs=window.pdfjsLib;
+
+  pdfjs.GlobalWorkerOptions.workerSrc=
   "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
   const buffer=await file.arrayBuffer();
 
-  const pdf=await pdfjsLib.getDocument({
+  const pdf=await pdfjs.getDocument({
    data:new Uint8Array(buffer)
   }).promise;
 
@@ -424,11 +432,12 @@ async function extractText(file){
    const page=await pdf.getPage(pageNumber);
    const content=await page.getTextContent();
 
-   const pageText=content.items
-    .map(item=>item.str)
-    .join(" ");
+   const pageText=content.items.map(item=>{
+    return item.str+(item.hasEOL ? "\n" : " ");
+   }).join("");
 
    fullText+=pageText+"\n";
+
   }
 
   return fullText;
@@ -438,12 +447,12 @@ async function extractText(file){
  if(name.endsWith(".docx")){
 
   if(!window.mammoth){
-   throw new Error("Word library load হয়নি।");
+   throw new Error("Word Library load হয়নি। ইন্টারনেট সংযোগ পরীক্ষা করুন।");
   }
 
   const buffer=await file.arrayBuffer();
 
-  const result=await mammoth.extractRawText({
+  const result=await window.mammoth.extractRawText({
    arrayBuffer:buffer
   });
 
@@ -457,6 +466,9 @@ async function extractText(file){
 // Compare uploaded files
 async function compareFiles(){
 
+ const button=document.getElementById("compareFilesButton");
+ const report=document.getElementById("report");
+
  try{
 
   const fileA=originalFile.files[0];
@@ -467,63 +479,45 @@ async function compareFiles(){
    return;
   }
 
-  if(fileA.size>5*1024*1024 || fileB.size>5*1024*1024){
+  const maxSize=5*1024*1024;
+
+  if(fileA.size>maxSize || fileB.size>maxSize){
    alert("প্রতিটি ফাইল সর্বোচ্চ 5 MB হতে পারবে।");
    return;
   }
 
-  document.getElementById("report").textContent=
-  "ফাইল পড়া হচ্ছে, অপেক্ষা করুন...";
+  button.disabled=true;
+  button.textContent="Processing...";
+  report.textContent="ফাইল পড়া হচ্ছে, অপেক্ষা করুন...";
 
   const a=await extractText(fileA);
   const b=await extractText(fileB);
 
   if(!a.trim() || !b.trim()){
-   throw new Error("ফাইল থেকে কোনো লেখা পাওয়া যায়নি।");
+   throw new Error("ফাইল থেকে কোনো লেখা পাওয়া যায়নি। স্ক্যান করা PDF হলে OCR প্রয়োজন।");
   }
 
   makeReport(a,b);
 
  }catch(error){
 
-  document.getElementById("report").textContent=
-  "ফাইল পড়তে সমস্যা হয়েছে: "+error.message;
+  console.error(error);
+
+  report.innerHTML=
+  '<p class="error">ফাইল পড়তে সমস্যা হয়েছে: '+
+  escapeHTML(error.message)+'</p>';
+
+ }finally{
+
+  button.disabled=false;
+  button.textContent="Compare Documents";
 
  }
 
 }
 
 
- try{
-
-  const fileA=originalFile.files[0];
-  const fileB=typedFile.files[0];
-
-  if(!fileA || !fileB){
-   alert("দয়া করে দুটি TXT ফাইল নির্বাচন করুন।");
-   return;
-  }
-
-  if(fileA.size>5*1024*1024 || fileB.size>5*1024*1024){
-   alert("এই প্রাথমিক সংস্করণে প্রতিটি TXT ফাইল সর্বোচ্চ 5 MB হতে পারবে।");
-   return;
-  }
-
-  const a=await fileA.text();
-  const b=await fileB.text();
-
-  makeReport(a,b);
-
- }catch(error){
-
-  document.getElementById("report").textContent=
-  "ফাইল পড়তে সমস্যা হয়েছে: "+error.message;
-
- }
-
-}
-
-// Compare manual text
+// Manual text comparison
 function compareText(){
 
  const a=document.getElementById("originalText").value;
