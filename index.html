@@ -252,7 +252,10 @@ function escapeHTML(value){
 // Smart comparison using LCS
 function makeReport(original,typed){
 
- const A=original.split(/\s+/u).filter(Boolean);
+original=normalizeBanglaText(original);
+typed=normalizeBanglaText(typed);
+
+const A=original.split(/\s+/u).filter(Boolean);
  const B=typed.split(/\s+/u).filter(Boolean);
 
  const n=A.length;
