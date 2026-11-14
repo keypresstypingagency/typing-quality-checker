@@ -226,6 +226,16 @@ typedFile.addEventListener("change",function(){
  this.files[0]?.name || "কোনো ফাইল নির্বাচন করা হয়নি";
 });
 
+function normalizeBanglaText(text){
+
+ return text
+  .normalize("NFC")
+  .replace(/[\u200B-\u200D\uFEFF]/g,"")
+  .replace(/\s+/g," ")
+  .trim();
+
+}
+
 function escapeHTML(value){
  return String(value).replace(/[&<>"']/g,function(c){
   return {
