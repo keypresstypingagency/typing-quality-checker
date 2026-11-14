@@ -445,9 +445,10 @@ async function extractText(file){
    const page=await pdf.getPage(pageNumber);
    const content=await page.getTextContent();
 
-   const pageText=content.items.map(item=>{
-    return item.str+(item.hasEOL ? "\n" : " ");
-   }).join("");
+  const pageText=content.items
+ .map(item=>item.str)
+ .join("")
+ .normalize("NFC");
 
    fullText+=pageText+"\n";
 
