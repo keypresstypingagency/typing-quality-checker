@@ -151,14 +151,14 @@ Original Document এবং Typed Document-এর পার্থক্য শ�
 <div class="upload">
 <h3>📄 Original File</h3>
 <p class="muted">মূল TXT ফাইল নির্বাচন করুন</p>
-<input type="file" id="originalFile" accept=".txt">
+<input type="file" id="originalFile" accept=".txt,.pdf,.docx">
 <p id="originalName" class="muted">কোনো ফাইল নির্বাচন করা হয়নি</p>
 </div>
 
 <div class="upload">
 <h3>📝 Typed File</h3>
 <p class="muted">টাইপ করা TXT ফাইল নির্বাচন করুন</p>
-<input type="file" id="typedFile" accept=".txt">
+<input type="file" id="typedFile" accept=".txt,.pdf,.docx">
 <p id="typedName" class="muted">কোনো ফাইল নির্বাচন করা হয়নি</p>
 </div>
 
@@ -391,8 +391,108 @@ function makeReport(original,typed){
 
 }
 
+
+async function extractText(file){
+
+ const name=file.name.toLowerCase();
+
+ // TXT
+ if(name.endsWith(".txt")){
+  return await file.text();
+ }
+
+ // PDF
+ if(name.endsWith(".pdf")){
+
+  if(!window.pdfjsLib){
+   throw new Error("PDF library load হয়নি।");
+  }
+
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+  const buffer=await file.arrayBuffer();
+
+  const pdf=await pdfjsLib.getDocument({
+   data:new Uint8Array(buffer)
+  }).promise;
+
+  let fullText="";
+
+  for(let pageNumber=1;pageNumber<=pdf.numPages;pageNumber++){
+
+   const page=await pdf.getPage(pageNumber);
+   const content=await page.getTextContent();
+
+   const pageText=content.items
+    .map(item=>item.str)
+    .join(" ");
+
+   fullText+=pageText+"\n";
+  }
+
+  return fullText;
+ }
+
+ // DOCX
+ if(name.endsWith(".docx")){
+
+  if(!window.mammoth){
+   throw new Error("Word library load হয়নি।");
+  }
+
+  const buffer=await file.arrayBuffer();
+
+  const result=await mammoth.extractRawText({
+   arrayBuffer:buffer
+  });
+
+  return result.value;
+ }
+
+ throw new Error("এই ফাইলের ফরম্যাট সমর্থিত নয়।");
+}
+
+
 // Compare uploaded files
 async function compareFiles(){
+
+ try{
+
+  const fileA=originalFile.files[0];
+  const fileB=typedFile.files[0];
+
+  if(!fileA || !fileB){
+   alert("দয়া করে দুটি ফাইল নির্বাচন করুন।");
+   return;
+  }
+
+  if(fileA.size>5*1024*1024 || fileB.size>5*1024*1024){
+   alert("প্রতিটি ফাইল সর্বোচ্চ 5 MB হতে পারবে।");
+   return;
+  }
+
+  document.getElementById("report").textContent=
+  "ফাইল পড়া হচ্ছে, অপেক্ষা করুন...";
+
+  const a=await extractText(fileA);
+  const b=await extractText(fileB);
+
+  if(!a.trim() || !b.trim()){
+   throw new Error("ফাইল থেকে কোনো লেখা পাওয়া যায়নি।");
+  }
+
+  makeReport(a,b);
+
+ }catch(error){
+
+  document.getElementById("report").textContent=
+  "ফাইল পড়তে সমস্যা হয়েছে: "+error.message;
+
+ }
+
+}
+
 
  try{
 
