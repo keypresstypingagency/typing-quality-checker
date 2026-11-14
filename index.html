@@ -3,129 +3,436 @@
 <html lang="bn">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Typing Quality Checker</title>
+
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#f3f6fb;color:#172b4d;font-family:Arial,sans-serif}
-header{background:#172b4d;color:white;padding:22px 7%}
-main{max-width:1000px;margin:35px auto;padding:0 18px}
-.panel{background:white;padding:24px;border-radius:12px;margin-bottom:20px;border:1px solid #e1e7f0}
-.uploads{display:grid;grid-template-columns:1fr 1fr;gap:20px}
-.upload{border:2px dashed #c5d3e6;padding:20px;border-radius:10px}
-button{background:#1765d1;color:white;border:0;padding:13px 22px;border-radius:8px;cursor:pointer;font-size:15px}
-button:disabled{opacity:.5;cursor:not-allowed}
+
+body{
+ margin:0;
+ background:#f3f6fb;
+ color:#172b4d;
+ font-family:Arial,sans-serif;
+}
+
+header{
+ background:#172b4d;
+ color:white;
+ padding:22px 7%;
+}
+
+header h2{margin:0}
+
+main{
+ max-width:1050px;
+ margin:35px auto;
+ padding:0 18px;
+}
+
+.panel{
+ background:white;
+ padding:24px;
+ border-radius:12px;
+ margin-bottom:22px;
+ border:1px solid #e1e7f0;
+ box-shadow:0 3px 12px #172b4d08;
+}
+
+.uploads{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:20px;
+}
+
+.upload{
+ border:2px dashed #c5d3e6;
+ padding:20px;
+ border-radius:10px;
+ background:#fafcff;
+}
+
+button{
+ background:#1765d1;
+ color:white;
+ border:0;
+ padding:13px 22px;
+ border-radius:8px;
+ cursor:pointer;
+ font-size:15px;
+ font-weight:bold;
+}
+
+button:hover{background:#0d50ad}
+
 .center{text-align:center;margin-top:20px}
-textarea{width:100%;min-height:150px;margin-top:10px;padding:12px;border:1px solid #ccd5e2;border-radius:8px}
-.result{padding:12px;background:#f7f9fc;border-radius:8px;overflow-wrap:anywhere;line-height:1.8}
+
+textarea{
+ width:100%;
+ min-height:150px;
+ margin:10px 0 20px;
+ padding:12px;
+ border:1px solid #ccd5e2;
+ border-radius:8px;
+ font-family:inherit;
+ font-size:15px;
+ line-height:1.7;
+}
+
+.result{
+ padding:16px;
+ background:#f7f9fc;
+ border-radius:8px;
+ overflow-wrap:anywhere;
+ line-height:1.8;
+}
+
 .error{color:#c0392b}
 .success{color:#087b58}
-small{color:#667085}
-@media(max-width:650px){.uploads{grid-template-columns:1fr}}
+.muted{color:#667085;font-size:13px}
+
+.report-item{
+ background:white;
+ border:1px solid #e1e7f0;
+ border-radius:8px;
+ padding:12px;
+ margin:10px 0;
+}
+
+.stats{
+ display:grid;
+ grid-template-columns:repeat(3,1fr);
+ gap:12px;
+ margin:15px 0;
+}
+
+.stat{
+ background:#eef4ff;
+ padding:15px;
+ border-radius:8px;
+ text-align:center;
+}
+
+.stat strong{
+ display:block;
+ font-size:24px;
+ color:#1765d1;
+}
+
+@media(max-width:650px){
+ .uploads{grid-template-columns:1fr}
+ .stats{grid-template-columns:1fr}
+}
 </style>
 </head>
+
 <body>
+
 <header>
 <h2>✦ Typing Quality Checker</h2>
-<small style="color:#dce7f7">Document Verification System</small>
+<p class="muted" style="color:#dce7f7">
+Smart Document Verification System
+</p>
 </header>
 
 <main>
-<h1>Document Comparison</h1>
-<p>Original এবং Typed TXT ফাইলের লেখা তুলনা করুন।</p>
 
-<div class="panel">
+<h1>Document Quality Checker</h1>
+<p class="muted">
+Original Document এবং Typed Document-এর পার্থক্য শনাক্ত করুন।
+</p>
+
+<section class="panel">
+
+<h3>১. ফাইল আপলোড করুন</h3>
+
 <div class="uploads">
+
 <div class="upload">
 <h3>📄 Original File</h3>
-<input type="file" id="original" accept=".txt">
-<p><small>মূল TXT ফাইল নির্বাচন করুন</small></p>
+<p class="muted">মূল TXT ফাইল নির্বাচন করুন</p>
+<input type="file" id="originalFile" accept=".txt">
+<p id="originalName" class="muted">কোনো ফাইল নির্বাচন করা হয়নি</p>
 </div>
+
 <div class="upload">
 <h3>📝 Typed File</h3>
-<input type="file" id="typed" accept=".txt">
-<p><small>টাইপ করা TXT ফাইল নির্বাচন করুন</small></p>
+<p class="muted">টাইপ করা TXT ফাইল নির্বাচন করুন</p>
+<input type="file" id="typedFile" accept=".txt">
+<p id="typedName" class="muted">কোনো ফাইল নির্বাচন করা হয়নি</p>
 </div>
+
 </div>
+
 <div class="center">
 <button onclick="compareFiles()">Compare Documents</button>
 </div>
-</div>
 
-<div class="panel">
-<h3>Comparison Report</h3>
-<div id="report" class="result">এখনো কোনো তুলনা করা হয়নি।</div>
-</div>
+</section>
 
-<div class="panel">
-<h3>Manual Text Test</h3>
-<p><small>ফাইল ছাড়াও দুটি লেখা দিয়ে পরীক্ষা করতে পারবেন।</small></p>
+<section class="panel">
+
+<h3>২. Manual Text Comparison</h3>
+
 <label>Original Text</label>
-<textarea id="originalText" placeholder="মূল লেখা এখানে লিখুন"></textarea>
+<textarea id="originalText" placeholder="মূল লেখাটি এখানে লিখুন"></textarea>
+
 <label>Typed Text</label>
-<textarea id="typedText" placeholder="টাইপ করা লেখা এখানে লিখুন"></textarea>
+<textarea id="typedText" placeholder="টাইপ করা লেখাটি এখানে লিখুন"></textarea>
+
 <div class="center">
 <button onclick="compareText()">Compare Text</button>
 </div>
+
+</section>
+
+<section class="panel">
+
+<h3>৩. Comparison Report</h3>
+
+<div id="report" class="result">
+এখনো কোনো তুলনা করা হয়নি।
 </div>
+
+</section>
+
 </main>
 
 <script>
-async function readFile(input){
- const file=input.files[0];
- if(!file) throw new Error("দুটি TXT ফাইল নির্বাচন করুন।");
- if(!file.name.toLowerCase().endsWith(".txt"))
-   throw new Error("এই ধাপে শুধু TXT ফাইল সমর্থিত।");
- return await file.text();
+
+const originalFile=document.getElementById("originalFile");
+const typedFile=document.getElementById("typedFile");
+
+originalFile.addEventListener("change",function(){
+ document.getElementById("originalName").textContent=
+ this.files[0]?.name || "কোনো ফাইল নির্বাচন করা হয়নি";
+});
+
+typedFile.addEventListener("change",function(){
+ document.getElementById("typedName").textContent=
+ this.files[0]?.name || "কোনো ফাইল নির্বাচন করা হয়নি";
+});
+
+function escapeHTML(value){
+ return String(value).replace(/[&<>"']/g,function(c){
+  return {
+   "&":"&amp;",
+   "<":"&lt;",
+   ">":"&gt;",
+   '"':"&quot;",
+   "'":"&#39;"
+  }[c];
+ });
 }
 
-function makeReport(a,b){
- const A=a.split(/\s+/).filter(Boolean);
- const B=b.split(/\s+/).filter(Boolean);
- const rows=[];
- const max=Math.max(A.length,B.length);
- let errors=0;
+// Smart comparison using LCS
+function makeReport(original,typed){
 
- for(let i=0;i<max;i++){
-  const original=A[i]??"[নেই]";
-  const typed=B[i]??"[নেই]";
-  if(original!==typed){
-   errors++;
-   rows.push(`<p class="error">শব্দ ${i+1}: Original: <b>${escapeHTML(original)}</b> | Typed: <b>${escapeHTML(typed)}</b></p>`);
+ const A=original.split(/\s+/u).filter(Boolean);
+ const B=typed.split(/\s+/u).filter(Boolean);
+
+ const n=A.length;
+ const m=B.length;
+
+ // LCS table
+ const dp=Array.from(
+  {length:n+1},
+  ()=>new Uint32Array(m+1)
+ );
+
+ for(let i=n-1;i>=0;i--){
+  for(let j=m-1;j>=0;j--){
+
+   if(A[i]===B[j]){
+    dp[i][j]=1+dp[i+1][j+1];
+   }else{
+    dp[i][j]=Math.max(
+     dp[i+1][j],
+     dp[i][j+1]
+    );
+   }
+
   }
  }
 
- const report=document.getElementById("report");
- report.innerHTML=`<h3>তুলনার ফলাফল</h3>
- <p>Original শব্দ: ${A.length}</p>
- <p>Typed শব্দ: ${B.length}</p>
- <p>পার্থক্য পাওয়া গেছে: <b>${errors}</b> টি শব্দের অবস্থানে</p>
- ${errors?rows.join(""):'<p class="success">দুটি লেখার শব্দের ক্রম ও সংখ্যা মিলে গেছে।</p>'}
- <p><small>এটি প্রাথমিক শব্দ-অবস্থানভিত্তিক তুলনা; এটি এখনো পূর্ণাঙ্গ বানান বা OCR যাচাই নয়।</small></p>`;
-}
+ // Identify differences
+ let i=0,j=0;
+ const missing=[];
+ const extra=[];
 
-function escapeHTML(s){
- return String(s).replace(/[&<>"']/g,c=>({
- "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
- })[c]);
-}
+ while(i<n && j<m){
 
-async function compareFiles(){
- try{
-  const a=await readFile(document.getElementById("original"));
-  const b=await readFile(document.getElementById("typed"));
-  makeReport(a,b);
- }catch(e){
-  document.getElementById("report").textContent=e.message;
+  if(A[i]===B[j]){
+   i++;
+   j++;
+  }
+
+  else if(dp[i+1][j]>=dp[i][j+1]){
+   missing.push({
+    word:A[i],
+    position:i+1
+   });
+   i++;
+  }
+
+  else{
+   extra.push({
+    word:B[j],
+    position:j+1
+   });
+   j++;
+  }
+
  }
+
+ while(i<n){
+  missing.push({
+   word:A[i],
+   position:i+1
+  });
+  i++;
+ }
+
+ while(j<m){
+  extra.push({
+   word:B[j],
+   position:j+1
+  });
+  j++;
+ }
+
+ // Build report
+ let html=`
+ <h3>তুলনার ফলাফল</h3>
+
+ <div class="stats">
+
+ <div class="stat">
+ <strong>${n}</strong>
+ Original শব্দ
+ </div>
+
+ <div class="stat">
+ <strong>${m}</strong>
+ Typed শব্দ
+ </div>
+
+ <div class="stat">
+ <strong>${missing.length+extra.length}</strong>
+ মোট পার্থক্য
+ </div>
+
+ </div>
+
+ <p>বাদ পড়েছে: <b>${missing.length}</b> টি শব্দ</p>
+ <p>অতিরিক্ত আছে: <b>${extra.length}</b> টি শব্দ</p>
+ `;
+
+ if(missing.length){
+
+  html+=`
+  <h4 class="error">Original থেকে বাদ পড়েছে</h4>
+  `;
+
+  missing.forEach(item=>{
+   html+=`
+   <div class="report-item">
+   <b>Original শব্দের অবস্থান: ${item.position}</b>
+   <p class="error">${escapeHTML(item.word)}</p>
+   </div>
+   `;
+  });
+
+ }
+
+ if(extra.length){
+
+  html+=`
+  <h4 class="error">Typed ফাইলে অতিরিক্ত আছে</h4>
+  `;
+
+  extra.forEach(item=>{
+   html+=`
+   <div class="report-item">
+   <b>Typed শব্দের অবস্থান: ${item.position}</b>
+   <p class="error">${escapeHTML(item.word)}</p>
+   </div>
+   `;
+  });
+
+ }
+
+ if(!missing.length && !extra.length){
+
+  html+=`
+  <p class="success">
+  ✓ দুটি লেখার শব্দের ক্রম ও সংখ্যা মিলে গেছে।
+  </p>
+  `;
+
+ }
+
+ html+=`
+ <hr>
+ <p class="muted">
+ পদ্ধতি: Longest Common Subsequence (LCS).
+ এটি শব্দের ক্রম অনুযায়ী বাদ পড়া ও অতিরিক্ত শব্দ শনাক্ত করে।
+ এটি এখনো পূর্ণাঙ্গ বানান, OCR বা পৃষ্ঠা-ভিত্তিক যাচাই নয়।
+ </p>
+ `;
+
+ document.getElementById("report").innerHTML=html;
+
 }
 
-function compareText(){
- makeReport(
-  document.getElementById("originalText").value,
-  document.getElementById("typedText").value
- );
+// Compare uploaded files
+async function compareFiles(){
+
+ try{
+
+  const fileA=originalFile.files[0];
+  const fileB=typedFile.files[0];
+
+  if(!fileA || !fileB){
+   alert("দয়া করে দুটি TXT ফাইল নির্বাচন করুন।");
+   return;
+  }
+
+  if(fileA.size>5*1024*1024 || fileB.size>5*1024*1024){
+   alert("এই প্রাথমিক সংস্করণে প্রতিটি TXT ফাইল সর্বোচ্চ 5 MB হতে পারবে।");
+   return;
+  }
+
+  const a=await fileA.text();
+  const b=await fileB.text();
+
+  makeReport(a,b);
+
+ }catch(error){
+
+  document.getElementById("report").textContent=
+  "ফাইল পড়তে সমস্যা হয়েছে: "+error.message;
+
+ }
+
 }
+
+// Compare manual text
+function compareText(){
+
+ const a=document.getElementById("originalText").value;
+ const b=document.getElementById("typedText").value;
+
+ if(!a.trim() || !b.trim()){
+  alert("দয়া করে দুটি বক্সেই লেখা দিন।");
+  return;
+ }
+
+ makeReport(a,b);
+
+}
+
 </script>
+
 </body>
 </html>
