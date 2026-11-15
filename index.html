@@ -8,262 +8,48 @@
 
 <style>
 *{box-sizing:border-box}
-
-body{
-margin:0;
-background:#f3f6fb;
-color:#172b4d;
-font-family:Arial,sans-serif
-}
-
-header{
-background:#172b4d;
-color:white;
-padding:22px 5%
-}
-
+body{margin:0;background:#f3f6fb;color:#172b4d;font-family:Arial,sans-serif}
+header{background:#172b4d;color:white;padding:22px 5%}
 header h2{margin:0}
-
-main{
-max-width:1250px;
-margin:30px auto;
-padding:0 18px
-}
-
-.panel{
-background:white;
-padding:22px;
-border-radius:12px;
-margin-bottom:20px;
-border:1px solid #e1e7f0;
-box-shadow:0 3px 12px #172b4d08
-}
-
-.workspace{
-display:grid;
-grid-template-columns:1fr 1fr;
-gap:20px
-}
-
-.upload{
-border:2px dashed #aebfd6;
-padding:25px;
-border-radius:10px;
-background:#f9fbff;
-text-align:center
-}
-
-.typing-wrap{
-position:relative;
-border-radius:8px;
-overflow:hidden
-}
-
-textarea{
-width:100%;
-min-height:350px;
-padding:14px;
-border:1px solid #ccd5e2;
-border-radius:8px;
-font-size:15px;
-line-height:1.8;
-resize:vertical;
-font-family:Arial,sans-serif;
-background:white;
-display:block
-}
-
+main{max-width:1250px;margin:30px auto;padding:0 18px}
+.panel{background:white;padding:22px;border-radius:12px;margin-bottom:20px;border:1px solid #e1e7f0;box-shadow:0 3px 12px #172b4d08}
+.workspace{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.upload{border:2px dashed #aebfd6;padding:25px;border-radius:10px;background:#f9fbff;text-align:center}
+.typing-wrap{position:relative;border-radius:8px;overflow:hidden}
+textarea{width:100%;min-height:350px;padding:14px;border:1px solid #ccd5e2;border-radius:8px;font-size:15px;line-height:1.8;resize:vertical;font-family:Arial,sans-serif;background:white;display:block}
 #originalText{min-height:220px}
-
-.scan-overlay{
-display:none;
-position:absolute;
-inset:0;
-z-index:2;
-pointer-events:none;
-overflow:hidden;
-border-radius:8px
-}
-
+.scan-overlay{display:none;position:absolute;inset:0;z-index:2;pointer-events:none;overflow:hidden;border-radius:8px}
 .typing-wrap.scanning .scan-overlay{display:block}
-
-.scan-overlay::after{
-content:"";
-position:absolute;
-left:0;
-right:0;
-top:0;
-height:3px;
-background:linear-gradient(90deg,transparent,#ff2525,#ff7777,#ff2525,transparent);
-box-shadow:0 0 12px 3px #ff252580;
-animation:scanMove 1.5s linear infinite
-}
-
-@keyframes scanMove{
-from{top:0}
-to{top:100%}
-}
-
-button{
-background:#1765d1;
-color:white;
-border:0;
-padding:13px 22px;
-border-radius:8px;
-cursor:pointer;
-font-size:15px;
-font-weight:bold
-}
-
-button:disabled{
-opacity:.5;
-cursor:not-allowed
-}
-
+.scan-overlay::after{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,transparent,#ff2525,#ff7777,#ff2525,transparent);box-shadow:0 0 12px 3px #ff252580;animation:scanMove 1.5s linear infinite}
+@keyframes scanMove{from{top:0}to{top:100%}}
+button{background:#1765d1;color:white;border:0;padding:13px 22px;border-radius:8px;cursor:pointer;font-size:15px;font-weight:bold}
+button:disabled{opacity:.5;cursor:not-allowed}
 .center{text-align:center;margin-top:20px}
 .muted{color:#667085;font-size:13px}
-
 .file-list{text-align:left;margin-top:15px}
-
-.file-item{
-background:white;
-border:1px solid #e1e7f0;
-padding:9px;
-margin:6px 0;
-border-radius:7px;
-overflow-wrap:anywhere
-}
-
-.stats{
-display:grid;
-grid-template-columns:repeat(4,1fr);
-gap:10px;
-margin:18px 0
-}
-
-.stat{
-background:#eef4ff;
-padding:15px;
-text-align:center;
-border-radius:8px
-}
-
-.stat strong{
-display:block;
-font-size:23px;
-color:#1765d1
-}
-
-.result-item{
-border:1px solid #e1e7f0;
-padding:12px;
-margin:8px 0;
-border-radius:8px;
-background:white;
-overflow-wrap:anywhere
-}
-
+.file-item{background:white;border:1px solid #e1e7f0;padding:9px;margin:6px 0;border-radius:7px;overflow-wrap:anywhere}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0}
+.stat{background:#eef4ff;padding:15px;text-align:center;border-radius:8px}
+.stat strong{display:block;font-size:23px;color:#1765d1}
+.result-item{border:1px solid #e1e7f0;padding:12px;margin:8px 0;border-radius:8px;background:white;overflow-wrap:anywhere}
 .error{color:#c0392b}
 .success{color:#087b58}
-
-.question-context{
-margin-top:10px;
-padding:12px;
-background:#f8fafc;
-border:1px solid #e1e7f0;
-border-radius:8px;
-white-space:pre-wrap;
-line-height:1.9;
-font-size:14px
-}
-
-.missing-mark{
-color:#c0392b;
-background:#ffe5e5;
-border-bottom:2px solid #c0392b;
-font-weight:bold;
-padding:1px 2px;
-border-radius:3px
-}
-
-.question-label{
-display:block;
-margin-bottom:8px;
-color:#172b4d
-}
-
-.progress{
-background:#e8edf5;
-border-radius:20px;
-height:9px;
-overflow:hidden;
-margin:12px 0
-}
-
-.progress div{
-height:100%;
-width:0;
-background:#1765d1;
-transition:width .2s
-}
-
-.extra-info{
-background:#fff5f5;
-border:1px solid #f5d0d0;
-padding:10px;
-border-radius:7px;
-margin-top:10px
-}
-
+.question-context{margin-top:10px;padding:12px;background:#f8fafc;border:1px solid #e1e7f0;border-radius:8px;white-space:pre-wrap;line-height:1.9;font-size:14px}
+.missing-mark{color:#c0392b;background:#ffe5e5;border-bottom:2px solid #c0392b;font-weight:bold;padding:1px 2px;border-radius:3px}
+.question-label{display:block;margin-bottom:8px;color:#172b4d}
+.progress{background:#e8edf5;border-radius:20px;height:9px;overflow:hidden;margin:12px 0}
+.progress div{height:100%;width:0;background:#1765d1;transition:width .2s}
+.extra-info{background:#fff5f5;border:1px solid #f5d0d0;padding:10px;border-radius:7px;margin-top:10px}
 .extra-info p{margin:5px 0}
-
-.extra-line{
-margin:9px 0;
-padding:9px 11px;
-background:#fffafa;
-border-left:3px solid #c0392b;
-border-radius:4px;
-line-height:1.8;
-overflow-wrap:anywhere
-}
-
-.pdf-settings{
-margin-top:15px;
-padding:14px;
-background:#eef4ff;
-border-radius:9px;
-text-align:left
-}
-
-.pdf-settings label{
-display:block;
-font-weight:bold;
-margin-bottom:8px
-}
-
-.pdf-settings select{
-width:100%;
-padding:10px;
-border:1px solid #ccd5e2;
-border-radius:7px;
-background:white;
-font-size:14px;
-color:#172b4d
-}
-
-@media(max-width:750px){
-.workspace{grid-template-columns:1fr}
-.stats{grid-template-columns:repeat(2,1fr)}
-}
+.extra-line{margin:9px 0;padding:9px 11px;background:#fffafa;border-left:3px solid #c0392b;border-radius:4px;line-height:1.8;overflow-wrap:anywhere}
+.pdf-settings{margin-top:15px;padding:14px;background:#eef4ff;border-radius:9px;text-align:left}
+.pdf-settings label{display:block;font-weight:bold;margin-bottom:8px}
+.pdf-settings select{width:100%;padding:10px;border:1px solid #ccd5e2;border-radius:7px;background:white;font-size:14px;color:#172b4d}
+@media(max-width:750px){.workspace{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}}
 </style>
 
-<!-- PDF.js: PDF পড়ার জন্য -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-
-<!-- DOCX: Word ফাইল পড়ার জন্য -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
-
-<!-- Tesseract: বাংলা ও ইংরেজি OCR -->
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
 </head>
 
@@ -271,152 +57,77 @@ color:#172b4d
 
 <header>
 <h2>✦ Typing Quality Checker</h2>
-<p style="color:#dce7f7;margin-bottom:0">
-Smart Document Verification System
-</p>
+<p style="color:#dce7f7;margin-bottom:0">Smart Document Verification System</p>
 </header>
 
 <main>
 
 <h1>Document Quality Checker</h1>
-
-<p class="muted">
-ফাইল আপলোড করুন অথবা Original Text লিখুন। পাশে Typed Text দিয়ে তুলনা করুন।
-</p>
+<p class="muted">ফাইল আপলোড করুন অথবা Original Text লিখুন। পাশে Typed Text দিয়ে তুলনা করুন।</p>
 
 <section class="panel">
-
 <div class="workspace">
 
-<!-- ORIGINAL SECTION -->
-
 <div>
-
 <h3>📁 Original Files</h3>
 
 <div class="upload">
-
 <p>PDF, DOCX, TXT, JPG, PNG নির্বাচন করুন</p>
-
-<input
-type="file"
-id="originalFiles"
-multiple
-accept=".pdf,.docx,.txt,.jpg,.jpeg,.png,.webp"
->
-
-<p class="muted">
-একাধিক ফাইল নির্বাচন করতে পারবেন
-</p>
-
+<input type="file" id="originalFiles" multiple accept=".pdf,.docx,.txt,.jpg,.jpeg,.png,.webp">
+<p class="muted">একাধিক ফাইল নির্বাচন করতে পারবেন</p>
 </div>
 
-<!-- PDF MODE SETTINGS -->
-
 <div class="pdf-settings">
-
 <label for="pdfMode">📄 PDF পড়ার পদ্ধতি নির্বাচন করুন</label>
-
 <select id="pdfMode">
 <option value="smart">Smart Mode — সাধারণ PDF + প্রয়োজন হলে OCR</option>
 <option value="ocr">বাংলা OCR Mode — প্রতিটি PDF পৃষ্ঠা ছবি হিসেবে পড়বে</option>
 <option value="text">শুধু PDF Text Extract — OCR ব্যবহার করবে না</option>
 </select>
 
-<p class="muted">
-বাংলা PDF-এর লেখা ভেঙে গেলে অথবা অক্ষর ভুল দেখালে
-বাংলা OCR Mode নির্বাচন করুন।
-</p>
+<p class="muted">বাংলা PDF-এর লেখা ভেঙে গেলে অথবা অক্ষর ভুল দেখালে বাংলা OCR Mode নির্বাচন করুন।</p>
 
 <label for="ocrScale">OCR Quality</label>
-
 <select id="ocrScale">
 <option value="2">Normal</option>
 <option value="2.5" selected>High — Recommended</option>
 <option value="3">Very High — বেশি সময় লাগবে</option>
 </select>
-
 </div>
 
 <div id="fileList" class="file-list"></div>
 
-<!-- DIRECT ORIGINAL TEXT -->
-
 <div style="margin-top:20px">
-
 <h3>📝 Original Text</h3>
-
-<textarea
-id="originalText"
-placeholder="এখানে Original Document-এর লেখা পেস্ট করুন..."
-></textarea>
-
-<p class="muted">
-ফাইল ছাড়াই সরাসরি Original Text দিয়ে তুলনা করতে পারবেন।
-ফাইল ও Text একসঙ্গেও ব্যবহার করা যাবে।
-</p>
-
+<textarea id="originalText" placeholder="এখানে Original Document-এর লেখা পেস্ট করুন..."></textarea>
+<p class="muted">ফাইল ছাড়াই সরাসরি Original Text দিয়ে তুলনা করতে পারবেন। ফাইল ও Text একসঙ্গেও ব্যবহার করা যাবে।</p>
 </div>
-
 </div>
-
-<!-- TYPED TEXT SECTION -->
 
 <div>
-
 <h3>⌨️ Typed Text</h3>
-
 <div class="typing-wrap" id="typingWrap">
-
-<textarea
-id="typedText"
-placeholder="এখানে আপনার টাইপ করা লেখা পেস্ট করুন..."
-></textarea>
-
+<textarea id="typedText" placeholder="এখানে আপনার টাইপ করা লেখা পেস্ট করুন..."></textarea>
 <div class="scan-overlay"></div>
-
 </div>
-
-<p class="muted">
-এখানে সম্পূর্ণ টাইপ করা লেখা পেস্ট করুন।
-</p>
-
+<p class="muted">এখানে সম্পূর্ণ টাইপ করা লেখা পেস্ট করুন।</p>
 </div>
 
 </div>
 
 <div class="center">
-
-<button id="compareButton" type="button">
-Compare Documents
-</button>
-
+<button id="compareButton" type="button">Compare Documents</button>
 </div>
 
 <div id="progressArea" style="display:none">
-
-<p id="statusText" class="muted">
-প্রস্তুতি চলছে...
-</p>
-
-<div class="progress">
-<div id="progressBar"></div>
+<p id="statusText" class="muted">প্রস্তুতি চলছে...</p>
+<div class="progress"><div id="progressBar"></div></div>
 </div>
-
-</div>
-
 </section>
 
-<!-- REPORT -->
-
 <section class="panel">
-
 <h3>📊 Comparison Report</h3>
-
-<div id="report" class="muted">
-এখনো কোনো তুলনা করা হয়নি।
-</div>
-
+<div id="report" class="muted">এখনো কোনো তুলনা করা হয়নি।</div>
 </section>
 
 </main>
@@ -424,12 +135,12 @@ Compare Documents
 <script>
 "use strict";
 
-/* =========================================
+/* =====================================
    LIBRARY SETTINGS
-========================================= */
+===================================== */
 
 if(window.pdfjsLib){
-pdfjsLib.GlobalWorkerOptions.workerSrc=
+pdfjsLib.GlobalWorkerOptions.workerSrc =
 "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 }
 
@@ -442,206 +153,142 @@ compareButton.addEventListener("click",startCompare);
 let ocrWorker=null;
 
 
-/* =========================================
+/* =====================================
    FILE LIST
-========================================= */
+===================================== */
 
 function showFiles(){
-
 const list=document.getElementById("fileList");
-
 list.innerHTML="";
 
 Array.from(fileInput.files).forEach((file,index)=>{
-
 const item=document.createElement("div");
-
 item.className="file-item";
-
-item.textContent=
-`${index+1}. ${file.name} (${(file.size/1024/1024).toFixed(2)} MB)`;
-
+item.textContent=`${index+1}. ${file.name} (${(file.size/1024/1024).toFixed(2)} MB)`;
 list.appendChild(item);
-
 });
-
 }
 
 
-/* =========================================
+/* =====================================
    PROGRESS
-========================================= */
+===================================== */
 
 function setProgress(percent,message){
-
-document.getElementById("progressBar").style.width=
+document.getElementById("progressBar").style.width =
 Math.max(0,Math.min(100,percent))+"%";
 
 document.getElementById("statusText").textContent=message;
-
 }
 
 
-/* =========================================
-   TEXT NORMALIZATION
-========================================= */
+/* =====================================
+   BASIC TEXT CLEANING
+===================================== */
 
 function normalizeText(text){
-
 return String(text)
 .normalize("NFC")
 .replace(/[\u200B-\u200D\uFEFF]/g,"")
 .replace(/\r\n/g,"\n")
 .replace(/\r/g,"\n")
 .trim();
-
 }
 
-
 function cleanExtractedText(text){
-
 return normalizeText(text)
 .replace(/\u0000/g,"")
 .replace(/[ \t]+\n/g,"\n")
 .replace(/\n{3,}/g,"\n\n");
-
 }
 
-
 function escapeHTML(value){
-
 return String(value).replace(/[&<>"']/g,c=>({
-
 "&":"&amp;",
 "<":"&lt;",
 ">":"&gt;",
 '"':"&quot;",
 "'":"&#39;"
-
 })[c]);
-
 }
 
 
-/* =========================================
+/* =====================================
    OCR WORKER
-========================================= */
+===================================== */
 
 async function getOCRWorker(){
 
 if(!window.Tesseract){
-
-throw new Error(
-"OCR Library লোড হয়নি। ইন্টারনেট সংযোগ পরীক্ষা করুন।"
-);
-
+throw new Error("OCR Library লোড হয়নি। ইন্টারনেট সংযোগ পরীক্ষা করুন।");
 }
 
 if(!ocrWorker){
 
-setProgress(
-5,
-"বাংলা OCR প্রস্তুত হচ্ছে। প্রথমবার ভাষার ফাইল ডাউনলোড হতে পারে..."
-);
+setProgress(5,"বাংলা OCR প্রস্তুত হচ্ছে। প্রথমবার ভাষার ফাইল ডাউনলোড হতে পারে...");
 
 ocrWorker=await Tesseract.createWorker(
-
 "ben+eng",
-
 1,
-
 {
 logger:m=>{
-
 if(m.status==="recognizing text"){
-
 setProgress(
 Math.round((m.progress||0)*100),
 "বাংলা ও ইংরেজি লেখা পড়া হচ্ছে..."
 );
-
 }
-
 }
-
 }
-
 );
-
 }
 
 return ocrWorker;
-
 }
 
 
-/* =========================================
+/* =====================================
    IMAGE OCR
-========================================= */
+===================================== */
 
 async function recognizeImage(file){
-
-setProgress(
-5,
-"ছবি থেকে বাংলা ও ইংরেজি লেখা পড়া হচ্ছে..."
-);
-
+setProgress(5,"ছবি থেকে বাংলা ও ইংরেজি লেখা পড়া হচ্ছে...");
 const worker=await getOCRWorker();
-
 const result=await worker.recognize(file);
-
 return cleanExtractedText(result.data.text||"");
-
 }
 
 
-/* =========================================
-   PDF TEXT EXTRACTION
-========================================= */
+/* =====================================
+   PDF EXTRACTION
+===================================== */
 
 async function extractPDFText(file){
 
 if(!window.pdfjsLib){
-
-throw new Error(
-"PDF.js Library লোড হয়নি। ইন্টারনেট সংযোগ পরীক্ষা করুন।"
-);
-
+throw new Error("PDF.js Library লোড হয়নি। ইন্টারনেট সংযোগ পরীক্ষা করুন।");
 }
 
 const mode=document.getElementById("pdfMode").value;
-
-const scale=
-Number(document.getElementById("ocrScale").value)||2.5;
+const scale=Number(document.getElementById("ocrScale").value)||2.5;
 
 const fileData=new Uint8Array(await file.arrayBuffer());
 
-const pdf=await pdfjsLib.getDocument({
-data:fileData
-}).promise;
+const pdf=await pdfjsLib.getDocument({data:fileData}).promise;
 
 let worker=null;
-
 const pages=[];
 
 for(let pageNo=1;pageNo<=pdf.numPages;pageNo++){
 
 setProgress(
-
 Math.round((pageNo/pdf.numPages)*90),
-
 `PDF পৃষ্ঠা পড়া হচ্ছে: ${pageNo}/${pdf.numPages}`
-
 );
 
 const page=await pdf.getPage(pageNo);
-
 let pageText="";
-
 let shouldOCR=(mode==="ocr");
-
-
-/* PDF থেকে সরাসরি Text নেওয়া */
 
 if(mode!=="ocr"){
 
@@ -653,233 +300,384 @@ pageText=content.items
 .replace(/[ \t]+/g," ")
 .trim();
 
-
-/* Smart Mode: প্রয়োজন হলে OCR */
-
 if(mode==="smart"){
 
-const bengaliCount=
-(pageText.match(/[\u0980-\u09FF]/g)||[]).length;
-
-const replacementCount=
-(pageText.match(/\uFFFD/g)||[]).length;
-
-const privateUseCount=
-(pageText.match(/[\uE000-\uF8FF]/g)||[]).length;
+const bengaliCount=(pageText.match(/[\u0980-\u09FF]/g)||[]).length;
+const replacementCount=(pageText.match(/\uFFFD/g)||[]).length;
+const privateUseCount=(pageText.match(/[\uE000-\uF8FF]/g)||[]).length;
 
 shouldOCR=
-
 pageText.length<25||
 replacementCount>0||
 privateUseCount>0||
 (bengaliCount===0&&pageText.length<250);
-
 }
-
 }
-
-
-/* PDF PAGE OCR */
 
 if(shouldOCR){
 
 if(!worker){
-
 worker=await getOCRWorker();
-
 }
 
 setProgress(
-
 Math.round(((pageNo-0.5)/pdf.numPages)*90),
-
 `বাংলা OCR চলছে: PDF পৃষ্ঠা ${pageNo}/${pdf.numPages}`
-
 );
 
-const viewport=page.getViewport({
-scale:scale
-});
-
+const viewport=page.getViewport({scale});
 const canvas=document.createElement("canvas");
-
-const context=canvas.getContext("2d",{
-willReadFrequently:true
-});
+const context=canvas.getContext("2d",{willReadFrequently:true});
 
 canvas.width=Math.ceil(viewport.width);
 canvas.height=Math.ceil(viewport.height);
 
 await page.render({
-
 canvasContext:context,
-viewport:viewport
-
+viewport
 }).promise;
 
 const result=await worker.recognize(canvas);
-
 pageText=result.data.text||"";
 
 canvas.width=0;
 canvas.height=0;
-
 }
 
 pages.push(pageText);
-
 }
 
 return cleanExtractedText(pages.join("\n\n"));
-
 }
 
 
-/* =========================================
-   FILE EXTRACTION - NO BACKEND
-========================================= */
+/* =====================================
+   FILE EXTRACTION
+===================================== */
 
 async function extractFile(file){
 
 const name=file.name.toLowerCase();
 
-
-/* TXT FILE */
-
 if(name.endsWith(".txt")||file.type==="text/plain"){
-
 return cleanExtractedText(await file.text());
-
 }
-
-
-/* DOCX FILE */
 
 if(name.endsWith(".docx")){
 
 if(!window.mammoth){
-
-throw new Error(
-"DOCX Library লোড হয়নি।"
-);
-
+throw new Error("DOCX Library লোড হয়নি।");
 }
 
 const arrayBuffer=await file.arrayBuffer();
-
-const result=await mammoth.extractRawText({
-arrayBuffer:arrayBuffer
-});
+const result=await mammoth.extractRawText({arrayBuffer});
 
 return cleanExtractedText(result.value||"");
-
 }
-
-
-/* PDF FILE */
 
 if(name.endsWith(".pdf")||file.type==="application/pdf"){
-
 return await extractPDFText(file);
-
 }
-
-
-/* IMAGE FILE */
 
 if(/\.(jpg|jpeg|png|webp)$/i.test(name)){
-
 return await recognizeImage(file);
-
 }
 
-throw new Error(
-file.name+": এই ফাইল ফরম্যাট সমর্থিত নয়।"
+throw new Error(file.name+": এই ফাইল ফরম্যাট সমর্থিত নয়।");
+}
+
+
+/* =====================================
+   BANGLA DIGIT NORMALIZATION
+===================================== */
+
+function normalizeDigits(text){
+
+const banglaDigits="০১২৩৪৫৬৭৮৯";
+
+return String(text).replace(/[০-৯]/g,char=>{
+return String(banglaDigits.indexOf(char));
+});
+}
+
+
+/* =====================================
+   SUPERSCRIPT NORMALIZATION
+===================================== */
+
+function normalizeSuperscripts(text){
+
+const map={
+"⁰":"0","¹":"1","²":"2","³":"3","⁴":"4",
+"⁵":"5","⁶":"6","⁷":"7","⁸":"8","⁹":"9",
+"₀":"0","₁":"1","₂":"2","₃":"3","₄":"4",
+"₅":"5","₆":"6","₇":"7","₈":"8","₉":"9"
+};
+
+return String(text).replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹₀₁₂₃₄₅₆₇₈₉]/g,c=>map[c]);
+}
+
+
+/* =====================================
+   QUESTION NUMBER DETECTION
+===================================== */
+
+function getQuestionPrefix(line){
+
+return line.match(
+/^\s*(?:প্রশ্ন\s*)?([০-৯0-9]{1,4})\s*([.)।ঃ:])\s*/
 );
+}
 
+function numberToInteger(value){
+return Number(normalizeDigits(value));
 }
 
 
-/* =========================================
-   QUESTION AND OPTION DETECTION
-========================================= */
+/*
+  প্রশ্ন নম্বর ধারাবাহিক না হলে
+  সেটিকে নতুন প্রশ্ন হিসেবে ধরা হবে না।
+  এতে OCR-এর ভুল 9) বা 4) দিয়ে
+  অযথা নতুন প্রশ্ন তৈরি হবে না।
+*/
 
-function detectQuestionStart(line){
+function getValidQuestionStarts(lines){
 
-const match=line.match(
-/^\s*(?:প্রশ্ন\s*)?([০-৯0-9]{1,4})\s*[.)।ঃ:]\s*/
+const starts=[];
+let previousNumber=null;
+
+lines.forEach((line,index)=>{
+
+const match=getQuestionPrefix(line);
+if(!match)return;
+
+const number=numberToInteger(match[1]);
+
+if(!Number.isFinite(number))return;
+
+let valid=false;
+
+if(previousNumber===null){
+valid=true;
+}else if(number===previousNumber+1){
+valid=true;
+}
+
+if(valid){
+
+starts.push({
+lineIndex:index,
+number:match[1],
+prefix:match[0]
+});
+
+previousNumber=number;
+}
+
+});
+
+return starts;
+}
+
+
+/* =====================================
+   OPTION DETECTION
+===================================== */
+
+function getOptionPrefix(line){
+
+return line.match(
+/^\s*(\(?[কখগঘঙচছজঝঞ]|[A-Ha-h])(?:\)|[.)ঃ:]|[-–])\s*/u
 );
-
-return match?match[1]:null;
-
 }
-
 
 function detectOptionStart(word){
 
-const match=word.match(
-/^\(?([কখগঘঙচছজঝঞ]|[A-Ha-h])(?:\)|[.)ঃ:]|[-–])(?=$|[^\s])/u
+const match=String(word).match(
+/^\(?([কখগঘঙচছজঝঞ]|[A-Ha-h])(?:\)|[.)ঃ:]|[-–])/u
 );
 
-if(!match)return null;
-
-return match[1];
-
+return match?match[1]:null;
 }
 
 
-/* =========================================
+/* =====================================
+   WORD COMPARISON NORMALIZATION
+===================================== */
+
+/*
+  তুলনার সময় বাইরের উদ্ধৃতি ও বিরামচিহ্ন
+  বাদ দেওয়া হবে।
+
+  যেমন:
+  ‘জেনোসাইড’ এবং জেনোসাইড
+  একই শব্দ হিসেবে বিবেচিত হবে।
+
+  কিন্তু শব্দের ভেতরের অক্ষর বদলালে
+  সেটি আলাদা হিসেবেই থাকবে।
+*/
+
+function comparisonKey(word){
+
+let value=String(word)
+.normalize("NFC")
+.replace(/[\u200B-\u200D\uFEFF]/g,"")
+.replace(/[“”„‟]/g,'"')
+.replace(/[‘’‚‛]/g,"'")
+.replace(/[–—−]/g,"-")
+.replace(/[০-৯]/g,char=>normalizeDigits(char))
+.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹₀₁₂₃₄₅₆₇₈₉]/g,char=>normalizeSuperscripts(char))
+.toLowerCase()
+.trim();
+
+if(!value)return "";
+
+/* অপারেটর একা থাকলে সংরক্ষণ */
+if(/^[+\-−×÷=<>^*/]+$/u.test(value)){
+return value;
+}
+
+/* বাইরের punctuation সরানো */
+value=value
+.replace(/^[\p{P}\p{S}]+/gu,"")
+.replace(/[\p{P}\p{S}]+$/gu,"")
+.trim();
+
+return value;
+}
+
+
+/* =====================================
    WORD DATA
-========================================= */
+===================================== */
 
 function getWordData(text){
 
 const normalized=normalizeText(text);
-
 const lines=normalized.split("\n");
 
 const tokens=[];
-
-const lineStartPositions=[];
-
 let currentQuestion=null;
-
 let currentOption=null;
+
+const questionStarts=getValidQuestionStarts(lines);
+
+const questionStartMap=new Map(
+questionStarts.map(item=>[item.lineIndex,item])
+);
 
 lines.forEach((line,lineIndex)=>{
 
-lineStartPositions[lineIndex]=tokens.length+1;
+let contentLine=line;
+let structuralFirstToken=false;
 
-const detectedQuestion=detectQuestionStart(line);
+/* প্রশ্ন নম্বর শনাক্ত */
 
-if(detectedQuestion){
+const questionStart=questionStartMap.get(lineIndex);
 
-currentQuestion=detectedQuestion;
+if(questionStart){
 
+currentQuestion=questionStart.number;
 currentOption=null;
 
+contentLine=line.replace(questionStart.prefix,"");
+structuralFirstToken=true;
+
+}else{
+
+/*
+  ধারাবাহিকতার বাইরে থাকা সংখ্যার prefix
+  প্রশ্ন নম্বর হিসেবে গণনা করা হবে না।
+  তবে সেটি তুলনায়ও অযথা Extra হবে না।
+*/
+
+const possibleQuestion=getQuestionPrefix(line);
+
+if(possibleQuestion){
+contentLine=line.replace(possibleQuestion[0],"");
+structuralFirstToken=true;
+}
 }
 
-const words=line.split(/\s+/u).filter(Boolean);
 
-words.forEach((word,wordInLine)=>{
+/* অপশন শনাক্ত */
 
-const detectedOption=detectOptionStart(word);
+const optionPrefix=getOptionPrefix(contentLine);
 
-if(detectedOption){
+if(optionPrefix){
 
-currentOption=detectedOption;
+currentOption=optionPrefix[1];
+contentLine=contentLine.replace(optionPrefix[0],"");
+structuralFirstToken=true;
 
 }
+
+
+const originalWords=line.split(/\s+/u).filter(Boolean);
+const contentWords=contentLine.split(/\s+/u).filter(Boolean);
+
+let firstOriginalWord=true;
+let contentIndex=0;
+
+originalWords.forEach((rawWord,wordInLine)=>{
+
+let word=rawWord;
+let structural=false;
+
+/* প্রশ্ন নম্বর বা অপশন লেবেল বাদ */
+
+if(firstOriginalWord&&structuralFirstToken){
+
+structural=true;
+
+/* প্রশ্ন/অপশন prefix-এর পরের অংশ একই শব্দে থাকলে সেটি রাখবে */
+
+const prefixMatch=rawWord.match(
+/^(?:\(?[০-৯0-9]{1,4}[.)।ঃ:]|(?:প্রশ্ন\s*)?[০-৯0-9]{1,4}[.)।ঃ:]|\(?[কখগঘঙচছজঝঞA-Ha-h][).ঃ:-])/u
+);
+
+if(prefixMatch){
+
+const remainder=rawWord.slice(prefixMatch[0].length);
+
+if(remainder.trim()){
+word=remainder;
+structural=false;
+}else{
+word="";
+}
+
+}else{
+word="";
+}
+
+}else{
+
+contentIndex++;
+}
+
+firstOriginalWord=false;
+
+/* আলাদা option marker-ও বাদ */
+
+const optionOnly=/^\(?[কখগঘঙচছজঝঞA-Ha-h][).ঃ:-]?$/u.test(word);
+
+if(optionOnly){
+structural=true;
+}
+
+const key=structural?"":comparisonKey(word);
 
 tokens.push({
 
-word,
+word:rawWord,
+key,
 lineIndex,
 wordInLine,
 position:tokens.length+1,
 questionNumber:currentQuestion,
-optionNumber:currentOption
+optionNumber:currentOption,
+structural
 
 });
 
@@ -888,71 +686,55 @@ optionNumber:currentOption
 });
 
 return {
-
 lines,
 tokens,
-lineStartPositions
-
+questionStarts
 };
-
 }
 
 
-/* =========================================
-   EXACT WORD COMPARISON - MYERS DIFF
-========================================= */
+/* =====================================
+   MYERS DIFF
+===================================== */
 
 function compareWordsFast(original,typed){
 
 const originalData=getWordData(original);
-
 const typedData=getWordData(typed);
 
-const A=originalData.tokens;
+/* Structural token বাদ দিয়ে তুলনা */
 
-const B=typedData.tokens;
+const A=originalData.tokens.filter(item=>item.key);
+const B=typedData.tokens.filter(item=>item.key);
 
 const N=A.length;
-
 const M=B.length;
 
-const MAX=N+M;
-
 const missing=[];
-
 const extra=[];
 
-
-if(MAX===0){
+if(N+M===0){
 
 return {
-
 originalCount:0,
 typedCount:0,
-
 missing,
 extra,
-
 originalLines:originalData.lines,
 typedLines:typedData.lines,
-
-lineStartPositions:originalData.lineStartPositions
-
+originalTokens:originalData.tokens
 };
 
 }
 
+const MAX=N+M;
 
 let V=new Map();
-
 V.set(1,0);
 
 const trace=[];
-
 let finalD=0;
-
 let finished=false;
-
 
 for(let d=0;d<=MAX;d++){
 
@@ -960,115 +742,80 @@ trace.push(new Map(V));
 
 for(let k=-d;k<=d;k+=2){
 
-const left=V.has(k-1)
-?V.get(k-1):-Infinity;
-
-const right=V.has(k+1)
-?V.get(k+1):-Infinity;
+const left=V.has(k-1)?V.get(k-1):-Infinity;
+const right=V.has(k+1)?V.get(k+1):-Infinity;
 
 let x;
 
 if(k===-d||(k!==d&&left<right)){
-
 x=right;
-
 }else{
-
 x=left+1;
-
 }
 
 if(!Number.isFinite(x))x=0;
 
 let y=x-k;
 
-
 while(
-
 x<N&&
 y<M&&
-A[x].word===B[y].word
-
+A[x].key===B[y].key
 ){
-
 x++;
 y++;
-
 }
 
 V.set(k,x);
 
-
 if(x>=N&&y>=M){
-
 finalD=d;
-
 finished=true;
-
 break;
-
 }
 
 }
 
 if(finished)break;
-
 }
-
 
 if(!finished){
-
-throw new Error(
-"তুলনা সম্পন্ন করা যায়নি। আবার চেষ্টা করুন।"
-);
-
+throw new Error("তুলনা সম্পন্ন করা যায়নি। আবার চেষ্টা করুন।");
 }
 
-
 let x=N;
-
 let y=M;
-
 
 for(let d=finalD;d>0;d--){
 
 const previousV=trace[d];
-
 const k=x-y;
 
-const left=previousV.has(k-1)
-?previousV.get(k-1):-Infinity;
-
-const right=previousV.has(k+1)
-?previousV.get(k+1):-Infinity;
+const left=previousV.has(k-1)?previousV.get(k-1):-Infinity;
+const right=previousV.has(k+1)?previousV.get(k+1):-Infinity;
 
 let previousK;
 
-
 if(k===-d||(k!==d&&left<right)){
-
 previousK=k+1;
-
 }else{
-
 previousK=k-1;
-
 }
 
-
-const previousX=previousV.has(previousK)
-?previousV.get(previousK):0;
-
+const previousX=previousV.has(previousK)?previousV.get(previousK):0;
 const previousY=previousX-previousK;
 
+/* মিল থাকা শব্দ পেছনে সরানো */
 
-while(x>previousX&&y>previousY){
-
+while(
+x>previousX&&
+y>previousY
+){
 x--;
 y--;
-
 }
 
+/* Extra শব্দ */
 
 if(x===previousX){
 
@@ -1077,55 +824,47 @@ if(y>0){
 const item=B[y-1];
 
 extra.push({
-
 word:item.word,
 position:item.position,
-
 lineIndex:item.lineIndex,
 wordInLine:item.wordInLine,
-
 questionNumber:item.questionNumber,
 optionNumber:item.optionNumber
-
 });
 
 }
+
+/* Missing শব্দ */
 
 }else{
 
 if(x>0){
 
+const item=A[x-1];
+
 missing.push({
-
-word:A[x-1].word,
-position:x,
-
-lineIndex:A[x-1].lineIndex,
-wordInLine:A[x-1].wordInLine
-
+word:item.word,
+position:item.position,
+lineIndex:item.lineIndex,
+wordInLine:item.wordInLine
 });
 
 }
 
 }
 
-
 x=previousX;
-
 y=previousY;
 
 }
 
-
 missing.reverse();
-
 extra.reverse();
-
 
 return {
 
-originalCount:N,
-typedCount:M,
+originalCount:A.length,
+typedCount:B.length,
 
 missing,
 extra,
@@ -1133,76 +872,48 @@ extra,
 originalLines:originalData.lines,
 typedLines:typedData.lines,
 
-lineStartPositions:originalData.lineStartPositions
+originalTokens:originalData.tokens
 
 };
 
 }
 
 
-/* =========================================
+/* =====================================
    ORIGINAL QUESTION GROUPS
-========================================= */
+===================================== */
 
 function buildQuestionGroups(lines){
 
-const starts=[];
-
-lines.forEach((line,index)=>{
-
-const match=line.match(
-/^\s*(?:প্রশ্ন\s*)?([০-৯0-9]{1,4})\s*[.)।ঃ:]\s*/
-);
-
-if(match){
-
-starts.push({
-
-lineIndex:index,
-number:match[1]
-
-});
-
-}
-
-});
-
+const starts=getValidQuestionStarts(lines);
 
 if(!starts.length){
 
 return [{
-
 label:"Original অংশ",
 start:0,
 end:Math.max(0,lines.length-1)
-
 }];
 
 }
 
-
 const groups=[];
-
 
 if(starts[0].lineIndex>0){
 
 groups.push({
-
 label:"প্রশ্ন নম্বরের আগের অংশ",
 start:0,
 end:starts[0].lineIndex-1
-
 });
 
 }
-
 
 starts.forEach((item,index)=>{
 
 groups.push({
 
 label:"প্রশ্ন "+item.number,
-
 start:item.lineIndex,
 
 end:index+1<starts.length
@@ -1213,15 +924,13 @@ end:index+1<starts.length
 
 });
 
-
 return groups;
-
 }
 
 
-/* =========================================
-   ORIGINAL MISSING WORD HIGHLIGHT
-========================================= */
+/* =====================================
+   ORIGINAL MISSING HIGHLIGHT
+===================================== */
 
 function renderQuestionGroup(group,data,missingPositions){
 
@@ -1229,15 +938,10 @@ let html="";
 
 let globalPosition=1;
 
-
-for(let lineIndex=0;
-lineIndex<data.originalLines.length;
-lineIndex++){
+for(let lineIndex=0;lineIndex<data.originalLines.length;lineIndex++){
 
 const line=data.originalLines[lineIndex];
-
 const words=line.split(/\s+/u).filter(Boolean);
-
 
 if(lineIndex>=group.start&&lineIndex<=group.end){
 
@@ -1267,52 +971,105 @@ globalPosition+=words.length;
 
 }
 
-
 return html.trimEnd();
-
 }
 
 
-/* =========================================
-   EXTRA WORD GROUPING
-========================================= */
+/* =====================================
+   EXTRA GROUPING
+===================================== */
 
-function groupExtraWords(extra){
+function showExtraReport(extra){
 
-const groups=new Map();
+const questionGroups=new Map();
 
 extra.forEach(item=>{
 
-const question=item.questionNumber||null;
+const question=item.questionNumber||"unknown";
 
-const option=item.optionNumber||null;
+if(!questionGroups.has(question)){
 
-const key=(question||"unknown")+"|"+(option||"unknown");
-
-if(!groups.has(key)){
-
-groups.set(key,{
-
+questionGroups.set(question,{
 question,
-option,
-items:[]
-
+questionItems:[],
+options:new Map(),
+positions:[]
 });
 
 }
 
-groups.get(key).items.push(item);
+const group=questionGroups.get(question);
 
-});
+group.positions.push(item.position);
 
-return Array.from(groups.values());
+if(item.optionNumber){
+
+if(!group.options.has(item.optionNumber)){
+group.options.set(item.optionNumber,[]);
+}
+
+group.options.get(item.optionNumber).push(item.word);
+
+}else{
+
+group.questionItems.push(item.word);
 
 }
 
+});
 
-/* =========================================
+let html="";
+
+questionGroups.forEach(group=>{
+
+html+=`
+<div class="result-item">
+<div class="extra-info">
+<p><b>📌 প্রশ্ন নম্বর:</b>
+${group.question==="unknown"?"শনাক্ত করা যায়নি":escapeHTML(group.question)}
+</p>
+</div>
+`;
+
+if(group.questionItems.length){
+
+html+=`
+<div class="extra-line error">
+<b>প্রশ্নের অতিরিক্ত লেখা:</b>
+${escapeHTML(group.questionItems.join(" "))}
+</div>
+`;
+
+}
+
+group.options.forEach((words,option)=>{
+
+html+=`
+<div class="extra-line error">
+<b>অপশন ${escapeHTML(option)}:</b>
+${escapeHTML(words.join(" "))}
+</div>
+`;
+
+});
+
+html+=`
+<p class="muted">
+<b>Typed Text-এ শব্দের অবস্থান:</b>
+${group.positions.join(", ")}
+</p>
+</div>
+`;
+
+});
+
+return html;
+}
+
+
+/* =====================================
    REPORT DISPLAY
-========================================= */
+===================================== */
 
 function showReport(data){
 
@@ -1343,7 +1100,6 @@ Extra
 </div>
 
 </div>
-
 `;
 
 
@@ -1352,9 +1108,7 @@ Extra
 if(data.missing.length){
 
 html+=`
-<h3 class="error">
-❌ Original থেকে বাদ পড়েছে
-</h3>
+<h3 class="error">❌ Original থেকে বাদ পড়েছে</h3>
 `;
 
 const missingPositions=new Set(
@@ -1381,7 +1135,6 @@ const missingText=groupMissing
 .join(" ");
 
 html+=`
-
 <div class="result-item">
 
 <b class="question-label">
@@ -1398,28 +1151,19 @@ ${escapeHTML(missingText)}
 </p>
 
 </div>
-
 `;
 
 });
-
 
 if(!shownAnyGroup){
 
 data.missing.forEach(item=>{
 
 html+=`
-
 <div class="result-item">
-
 <b>Original শব্দের অবস্থান: ${item.position}</b>
-
-<p class="error">
-${escapeHTML(item.word)}
-</p>
-
+<p class="error">${escapeHTML(item.word)}</p>
 </div>
-
 `;
 
 });
@@ -1434,126 +1178,10 @@ ${escapeHTML(item.word)}
 if(data.extra.length){
 
 html+=`
-
-<h3 class="error">
-➕ Typed Text-এ অতিরিক্ত আছে
-</h3>
-
+<h3 class="error">➕ Typed Text-এ অতিরিক্ত আছে</h3>
 `;
 
-const questionGroups=new Map();
-
-data.extra.forEach(item=>{
-
-const question=item.questionNumber||"unknown";
-
-if(!questionGroups.has(question)){
-
-questionGroups.set(question,{
-
-question,
-questionItems:[],
-options:new Map(),
-positions:[]
-
-});
-
-}
-
-const group=questionGroups.get(question);
-
-group.positions.push(item.position);
-
-if(item.optionNumber){
-
-if(!group.options.has(item.optionNumber)){
-
-group.options.set(item.optionNumber,[]);
-
-}
-
-group.options.get(item.optionNumber).push(item.word);
-
-}else{
-
-group.questionItems.push(item.word);
-
-}
-
-});
-
-
-questionGroups.forEach(group=>{
-
-html+=`
-
-<div class="result-item">
-
-<div class="extra-info">
-
-<p>
-<b>📌 প্রশ্ন নম্বর:</b>
-
-${group.question==="unknown"
-?"শনাক্ত করা যায়নি"
-:escapeHTML(group.question)}
-
-</p>
-
-</div>
-
-`;
-
-
-if(group.questionItems.length){
-
-html+=`
-
-<div class="extra-line error">
-
-<b>প্রশ্নের অতিরিক্ত লেখা:</b>
-
-${escapeHTML(group.questionItems.join(" "))}
-
-</div>
-
-`;
-
-}
-
-
-group.options.forEach((words,option)=>{
-
-html+=`
-
-<div class="extra-line error">
-
-<b>অপশন ${escapeHTML(option)}:</b>
-
-${escapeHTML(words.join(" "))}
-
-</div>
-
-`;
-
-});
-
-
-html+=`
-
-<p class="muted">
-
-<b>Typed Text-এ শব্দের অবস্থান:</b>
-
-${group.positions.join(", ")}
-
-</p>
-
-</div>
-
-`;
-
-});
+html+=showExtraReport(data.extra);
 
 }
 
@@ -1563,11 +1191,7 @@ ${group.positions.join(", ")}
 if(!data.missing.length&&!data.extra.length){
 
 html+=`
-
-<h3 class="success">
-✓ দুটি লেখার শব্দ মিলে গেছে।
-</h3>
-
+<h3 class="success">✓ দুটি লেখার শব্দ মিলে গেছে।</h3>
 `;
 
 }
@@ -1576,35 +1200,34 @@ html+=`
 /* FOOTNOTE */
 
 html+=`
-
 <p class="muted">
 
 প্রশ্ন নম্বর ও অপশন Typed Text-এর বিন্যাস অনুযায়ী শনাক্ত করা হয়।
 
-প্রশ্ন বা অপশন শনাক্ত করা না গেলে শনাক্ত করা যায়নি দেখানো হবে।
+প্রশ্ন নম্বর ধারাবাহিক না হলে সেটিকে নতুন প্রশ্ন হিসেবে ধরা হয় না।
 
-একই প্রশ্নের অতিরিক্ত শব্দ একটি কার্ডে এবং প্রতিটি অপশন আলাদা লাইনে দেখানো হয়।
+অপশন লেবেল ও প্রশ্ন নম্বর শব্দের তুলনা থেকে বাদ রাখা হয়।
+
+বাইরের উদ্ধৃতি ও সাধারণ বিরামচিহ্নের পার্থক্য তুলনায় উপেক্ষা করা হয়।
+
+বাংলা ও ইংরেজি অঙ্ক এবং সুপারস্ক্রিপ্ট সংখ্যার তুলনা স্বাভাবিক করা হয়।
 
 লাল রঙে চিহ্নিত শব্দগুলো Original থেকে বাদ পড়েছে।
 
-Original-এ থাকা প্রশ্ন ও অপশনই দেখানো হয়; কোনো প্রশ্ন বা অপশন বানিয়ে যোগ করা হয় না।
-
 অবস্থান বলতে শব্দের ক্রমিক নম্বর বোঝানো হয়েছে, Word-এর প্রকৃত পৃষ্ঠা নম্বর নয়।
 
-OCR-এর ভুল তুলনার ফলকে প্রভাবিত করতে পারে।
+OCR-এর ভুল বানান বা অক্ষর তুলনার ফলকে প্রভাবিত করতে পারে।
 
 </p>
-
 `;
 
 report.innerHTML=html;
-
 }
 
 
-/* =========================================
+/* =====================================
    MAIN COMPARISON
-========================================= */
+===================================== */
 
 async function startCompare(){
 
@@ -1613,86 +1236,59 @@ const report=document.getElementById("report");
 const files=Array.from(fileInput.files);
 
 const typed=document.getElementById("typedText").value;
+const originalInput=document.getElementById("originalText").value;
 
-const originalInput=
-document.getElementById("originalText").value;
-
-const typingWrap=
-document.getElementById("typingWrap");
-
+const typingWrap=document.getElementById("typingWrap");
 
 if(!files.length&&!originalInput.trim()){
 
-alert(
-"Original ফাইল আপলোড করুন অথবা Original Text লিখুন।"
-);
-
+alert("Original ফাইল আপলোড করুন অথবা Original Text লিখুন।");
 return;
 
 }
-
 
 if(!typed.trim()){
 
-alert(
-"Typed Text বক্সে লেখা পেস্ট করুন।"
-);
-
+alert("Typed Text বক্সে লেখা পেস্ট করুন।");
 return;
 
 }
-
 
 if(files.length>50){
 
-alert(
-"একবারে সর্বোচ্চ ৫০টি ফাইল নির্বাচন করুন।"
-);
-
+alert("একবারে সর্বোচ্চ ৫০টি ফাইল নির্বাচন করুন।");
 return;
 
 }
 
-
 compareButton.disabled=true;
-
 compareButton.textContent="Processing...";
 
 typingWrap.classList.add("scanning");
 
 document.getElementById("progressArea").style.display="block";
-
 document.getElementById("progressBar").style.width="0%";
 
-report.innerHTML=
-'<p class="muted">তুলনা চলছে...</p>';
-
+report.innerHTML='<p class="muted">তুলনা চলছে...</p>';
 
 try{
 
 let originalText=originalInput;
 
-
-/* EXTRACT ALL SELECTED FILES */
+/* FILE EXTRACTION */
 
 for(let i=0;i<files.length;i++){
 
 setProgress(
-
 Math.round((i/files.length)*80),
-
 `ফাইল পড়া হচ্ছে: ${files[i].name} (${i+1}/${files.length})`
-
 );
 
 const extractedText=await extractFile(files[i]);
 
-
 if(!extractedText.trim()){
 
-throw new Error(
-files[i].name+" থেকে কোনো লেখা পাওয়া যায়নি।"
-);
+throw new Error(files[i].name+" থেকে কোনো লেখা পাওয়া যায়নি।");
 
 }
 
@@ -1700,70 +1296,42 @@ originalText+="\n"+extractedText+"\n";
 
 }
 
-
 if(!originalText.trim()){
 
-throw new Error(
-"Original Text পাওয়া যায়নি।"
-);
+throw new Error("Original Text পাওয়া যায়নি।");
 
 }
 
-
-setProgress(
-85,
-"তুলনার প্রস্তুতি চলছে..."
-);
-
+setProgress(85,"তুলনার প্রস্তুতি চলছে...");
 
 await new Promise(resolve=>
-
 requestAnimationFrame(()=>
-
 requestAnimationFrame(resolve)
-
 )
-
 );
 
+setProgress(90,"শব্দ তুলনা করা হচ্ছে...");
 
-setProgress(
-90,
-"Myers Diff দিয়ে শব্দ তুলনা করা হচ্ছে..."
-);
+const result=compareWordsFast(originalText,typed);
 
-
-const result=compareWordsFast(
-originalText,
-typed
-);
-
-
-setProgress(
-100,
-"তুলনা সম্পন্ন হয়েছে।"
-);
+setProgress(100,"তুলনা সম্পন্ন হয়েছে।");
 
 showReport(result);
-
 
 }catch(error){
 
 console.error(error);
 
 report.innerHTML=
-
 '<p class="error">'+
 escapeHTML(error.message||"অজানা সমস্যা হয়েছে।")+
 '</p>';
-
 
 }finally{
 
 typingWrap.classList.remove("scanning");
 
 compareButton.disabled=false;
-
 compareButton.textContent="Compare Documents";
 
 }
