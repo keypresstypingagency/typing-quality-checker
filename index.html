@@ -437,7 +437,8 @@ async function extractFile(file){
 }
 
 
-// দ্রুত শব্দ তুলনা: External library প্রয়োজন নেই
+
+// দ্রুত ও বড় ডকুমেন্ট তুলনা
 function compareWordsFast(original,typed){
 
  const A=normalizeText(original)
@@ -451,16 +452,126 @@ function compareWordsFast(original,typed){
  const missing=[];
  const extra=[];
 
- // শুরুতে একই শব্দ বাদ
- let start=0;
+ let i=0;
+ let j=0;
 
- while(
-  start<A.length &&
-  start<B.length &&
-  A[start]===B[start]
- ){
-  start++;
+ // কত শব্দ সামনে খুঁজবে
+ const LOOKAHEAD=100;
+
+ while(i<A.length && j<B.length){
+
+  // একই শব্দ হলে সামনে এগিয়ে যাবে
+  if(A[i]===B[j]){
+   i++;
+   j++;
+   continue;
+  }
+
+  // Original-এর বর্তমান শব্দ Typed Text-এ খোঁজা
+  let foundInB=-1;
+
+  const endB=Math.min(B.length,j+LOOKAHEAD+1);
+
+  for(let k=j+1;k<endB;k++){
+   if(A[i]===B[k]){
+    foundInB=k;
+    break;
+   }
+  }
+
+  // Typed-এর বর্তমান শব্দ Original-এ খোঁজা
+  let foundInA=-1;
+
+  const endA=Math.min(A.length,i+LOOKAHEAD+1);
+
+  for(let k=i+1;k<endA;k++){
+   if(B[j]===A[k]){
+    foundInA=k;
+    break;
+   }
+  }
+
+  // Original-এর শব্দ পরে পাওয়া গেলে
+  if(foundInB!==-1 &&
+     (foundInA===-1 ||
+      foundInB-j<=foundInA-i)){
+
+   while(j<foundInB){
+
+    extra.push({
+     word:B[j],
+     position:j+1
+    });
+
+    j++;
+   }
+
+  }
+
+  // Typed-এর শব্দ পরে পাওয়া গেলে
+  else if(foundInA!==-1){
+
+   while(i<foundInA){
+
+    missing.push({
+     word:A[i],
+     position:i+1
+    });
+
+    i++;
+   }
+
+  }
+
+  // সামনে মিল না পেলে দুটি শব্দকেই পরিবর্তিত হিসেবে ধরবে
+  else{
+
+   missing.push({
+    word:A[i],
+    position:i+1
+   });
+
+   extra.push({
+    word:B[j],
+    position:j+1
+   });
+
+   i++;
+   j++;
+  }
+
  }
+
+ // Original-এর বাকি শব্দ
+ while(i<A.length){
+
+  missing.push({
+   word:A[i],
+   position:i+1
+  });
+
+  i++;
+ }
+
+ // Typed-এর বাকি শব্দ
+ while(j<B.length){
+
+  extra.push({
+   word:B[j],
+   position:j+1
+  });
+
+  j++;
+ }
+
+ return {
+  originalCount:A.length,
+  typedCount:B.length,
+  missing,
+  extra
+ };
+
+}
 
  // শেষে একই শব্দ বাদ
  let endA=A.length;
