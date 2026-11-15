@@ -73,7 +73,7 @@ textarea{
  display:block
 }
 
-/* লাল স্ক্যানিং অ্যানিমেশন */
+/* Red scanning animation */
 .scan-overlay{
  display:none;
  position:absolute;
@@ -289,9 +289,6 @@ Compare Documents
 
 </main>
 
-<!-- Comparison library -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/diff/5.2.0/diff.min.js"></script>
-
 <!-- Image OCR library -->
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
 
@@ -425,11 +422,8 @@ async function extractFile(file){
   let message="ফাইল পড়তে সমস্যা হয়েছে।";
 
   try{
-
    const error=await response.json();
-
    message=error.detail||message;
-
   }catch(e){}
 
   throw new Error(file.name+": "+message);
@@ -443,16 +437,8 @@ async function extractFile(file){
 }
 
 
-// দ্রুত শব্দ তুলনা
+// দ্রুত শব্দ তুলনা: External library প্রয়োজন নেই
 function compareWordsFast(original,typed){
-
- if(!window.Diff || !Diff.diffArrays){
-
-  throw new Error(
-   "Comparison Library লোড হয়নি। পেজ Refresh করে আবার চেষ্টা করুন।"
-  );
-
- }
 
  const A=normalizeText(original)
   .split(/\s+/u)
@@ -462,8 +448,10 @@ function compareWordsFast(original,typed){
   .split(/\s+/u)
   .filter(Boolean);
 
+ const missing=[];
+ const extra=[];
 
- // শুরুতে একই শব্দগুলো বাদ
+ // শুরুতে একই শব্দ বাদ
  let start=0;
 
  while(
@@ -471,139 +459,125 @@ function compareWordsFast(original,typed){
   start<B.length &&
   A[start]===B[start]
  ){
-
   start++;
-
  }
 
-
- // শেষে একই শব্দগুলো বাদ
- let endA=A.length-1;
- let endB=B.length-1;
+ // শেষে একই শব্দ বাদ
+ let endA=A.length;
+ let endB=B.length;
 
  while(
-  endA>=start &&
-  endB>=start &&
-  A[endA]===B[endB]
+  endA>start &&
+  endB>start &&
+  A[endA-1]===B[endB-1]
  ){
-
   endA--;
   endB--;
-
  }
 
+ const a=A.slice(start,endA);
+ const b=B.slice(start,endB);
 
- // শুধু মাঝের পরিবর্তিত অংশ তুলনা
- const middleA=A.slice(start,endA+1);
- const middleB=B.slice(start,endB+1);
+ const n=a.length;
+ const m=b.length;
 
- let changes=[];
+ // অতিরিক্ত বড় তুলনায় ব্রাউজার আটকে যাওয়া রোধ
+ const MAX_CELLS=1500000;
 
-
- if(middleA.length===0){
-
-  changes=[
-   {value:middleB,added:true}
-  ];
-
- }
-
- else if(middleB.length===0){
-
-  changes=[
-   {value:middleA,removed:true}
-  ];
-
- }
-
- else{
-
-  changes=Diff.diffArrays(
-   middleA,
-   middleB,
-   {timeout:10000}
-  );
-
- }
-
-
- if(!changes){
+ if(n*m>MAX_CELLS){
 
   throw new Error(
-   "তুলনা করতে বেশি সময় লাগছে। ছোট অংশে ভাগ করে আবার চেষ্টা করুন।"
+   "পরিবর্তিত অংশটি অনেক বড়। ব্রাউজারের নিরাপত্তার জন্য তুলনা বন্ধ করা হয়েছে। অনুগ্রহ করে ডকুমেন্টকে ছোট অংশে ভাগ করে তুলনা করুন।"
   );
 
  }
 
+ // LCS Dynamic Programming
+ const dp=Array.from(
+  {length:n+1},
+  ()=>new Uint32Array(m+1)
+ );
 
- const missing=[];
- const extra=[];
+ for(let i=n-1;i>=0;i--){
 
- let originalPosition=start;
- let typedPosition=start;
+  for(let j=m-1;j>=0;j--){
 
-
- changes.forEach(part=>{
-
-  const words=part.value||[];
-
-
-  // Original থেকে বাদ পড়েছে
-  if(part.removed){
-
-   words.forEach(word=>{
-
-    missing.push({
-     word:word,
-     position:originalPosition+1
-    });
-
-    originalPosition++;
-
-   });
+   if(a[i]===b[j]){
+    dp[i][j]=dp[i+1][j+1]+1;
+   }
+   else{
+    dp[i][j]=Math.max(
+     dp[i+1][j],
+     dp[i][j+1]
+    );
+   }
 
   }
 
+ }
 
-  // Typed Text-এ অতিরিক্ত
-  else if(part.added){
+ // Missing এবং Extra শনাক্ত
+ let i=0;
+ let j=0;
 
-   words.forEach(word=>{
+ while(i<n && j<m){
 
-    extra.push({
-     word:word,
-     position:typedPosition+1
-    });
+  if(a[i]===b[j]){
+   i++;
+   j++;
+  }
 
-    typedPosition++;
+  else if(dp[i+1][j]>=dp[i][j+1]){
 
+   missing.push({
+    word:a[i],
+    position:start+i+1
    });
+
+   i++;
 
   }
 
-
-  // একই শব্দ
   else{
 
-   originalPosition+=words.length;
+   extra.push({
+    word:b[j],
+    position:start+j+1
+   });
 
-   typedPosition+=words.length;
+   j++;
 
   }
 
- });
+ }
 
+ while(i<n){
+
+  missing.push({
+   word:a[i],
+   position:start+i+1
+  });
+
+  i++;
+
+ }
+
+ while(j<m){
+
+  extra.push({
+   word:b[j],
+   position:start+j+1
+  });
+
+  j++;
+
+ }
 
  return {
-
   originalCount:A.length,
-
   typedCount:B.length,
-
-  missing:missing,
-
-  extra:extra
-
+  missing,
+  extra
  };
 
 }
@@ -642,7 +616,6 @@ function showReport(data){
 
  `;
 
-
  // Missing Words
  if(data.missing.length){
 
@@ -656,20 +629,14 @@ function showReport(data){
 
    html+=`
    <div class="result-item">
-
    <b>Original শব্দের অবস্থান: ${item.position}</b>
-
-   <p class="error">
-   ${escapeHTML(item.word)}
-   </p>
-
+   <p class="error">${escapeHTML(item.word)}</p>
    </div>
    `;
 
   });
 
  }
-
 
  // Extra Words
  if(data.extra.length){
@@ -684,20 +651,14 @@ function showReport(data){
 
    html+=`
    <div class="result-item">
-
-   <b>Typed শব্দের অবস্থান: ${item.position}</b>
-
-   <p class="error">
-   ${escapeHTML(item.word)}
-   </p>
-
+   <b>Typed Text-এর শব্দের অবস্থান: ${item.position}</b>
+   <p class="error">${escapeHTML(item.word)}</p>
    </div>
    `;
 
   });
 
  }
-
 
  // সব ঠিক থাকলে
  if(
@@ -713,15 +674,12 @@ function showReport(data){
 
  }
 
-
  html+=`
-
  <p class="muted">
  অবস্থান বলতে শব্দের ক্রমিক নম্বর বোঝানো হয়েছে।
  এটি এখনো Word-এর প্রকৃত পৃষ্ঠা নম্বর নয়।
  OCR-এর ভুলও তুলনার ফলে প্রভাব ফেলতে পারে।
  </p>
-
  `;
 
  report.innerHTML=html;
@@ -747,36 +705,22 @@ async function startCompare(){
  const typingWrap=
   document.getElementById("typingWrap");
 
-
  if(!files.length){
-
   alert("কমপক্ষে একটি Original ফাইল নির্বাচন করুন।");
-
   return;
-
  }
-
 
  if(!typed.trim()){
-
   alert("Typed Text বক্সে লেখা পেস্ট করুন।");
-
   return;
-
  }
-
 
  if(files.length>50){
-
   alert("একবারে সর্বোচ্চ ৫০টি ফাইল নির্বাচন করুন।");
-
   return;
-
  }
 
-
  button.disabled=true;
-
  button.textContent="Processing...";
 
  typingWrap.classList.add("scanning");
@@ -786,11 +730,11 @@ async function startCompare(){
  report.innerHTML=
   '<p class="muted">তুলনা চলছে...</p>';
 
+ document.getElementById("progressBar").style.width="0%";
 
  try{
 
   let originalText="";
-
 
   // Original ফাইলগুলো পড়া
   for(let i=0;i<files.length;i++){
@@ -801,59 +745,37 @@ async function startCompare(){
     " ("+(i+1)+"/"+files.length+")"
    );
 
-
    const text=await extractFile(files[i]);
 
-
    if(!text.trim()){
-
     throw new Error(
      files[i].name+" থেকে কোনো লেখা পাওয়া যায়নি।"
     );
-
    }
-
 
    originalText+="\n"+text+"\n";
 
   }
 
+  setProgress(85,"তুলনার প্রস্তুতি চলছে...");
 
-  setProgress(
-   85,
-   "তুলনার প্রস্তুতি চলছে..."
-  );
-
-
-  // Browser-কে অ্যানিমেশন দেখানোর সুযোগ
+  // Animation দেখানোর সুযোগ
   await new Promise(resolve=>{
    requestAnimationFrame(()=>{
     requestAnimationFrame(resolve);
    });
   });
 
+  setProgress(90,"দ্রুত শব্দ তুলনা করা হচ্ছে...");
 
-  setProgress(
-   90,
-   "দ্রুত শব্দ তুলনা করা হচ্ছে..."
-  );
-
-
-  // Worker ছাড়া সরাসরি তুলনা
   const result=compareWordsFast(
    originalText,
    typed
   );
 
-
-  setProgress(
-   100,
-   "তুলনা সম্পন্ন হয়েছে।"
-  );
-
+  setProgress(100,"তুলনা সম্পন্ন হয়েছে।");
 
   showReport(result);
-
 
  }catch(error){
 
