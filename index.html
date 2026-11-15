@@ -62,7 +62,6 @@ select{width:100%;padding:10px;border:1px solid #ccd5e2;border-radius:7px;backgr
 
 <section class="panel">
 <div class="workspace">
-
 <div>
 <h3>📁 Original Files</h3>
 <div class="upload">
@@ -94,29 +93,40 @@ select{width:100%;padding:10px;border:1px solid #ccd5e2;border-radius:7px;backgr
 <label for="pdfMode">PDF পড়ার পদ্ধতি</label>
 <select id="pdfMode">
 <option value="smart">Smart (Text + প্রয়োজন হলে OCR)</option>
-<option value="ocr">Bengali OCR (সব পৃষ্ঠা OCR)</option>
+<option value="ocr">OCR (সব পৃষ্ঠা OCR)</option>
 <option value="text">Text Only (OCR বন্ধ)</option>
 </select>
 </div>
+
 <div class="setting">
 <label for="ocrQuality">OCR Quality</label>
 <select id="ocrQuality">
 <option value="normal">Normal - দ্রুত</option>
-<option value="high" selected>High - ভালো মান</option>
+<option value="high" selected>High - উন্নত</option>
 <option value="veryhigh">Very High - সর্বোচ্চ চেষ্টা</option>
 </select>
 </div>
+
 <div class="setting">
 <label for="ocrLanguages">OCR Languages</label>
 <select id="ocrLanguages">
 <option value="ben+eng+ara+urd+fas" selected>বাংলা + English + Arabic + Urdu + Persian</option>
+<option value="ben+eng+equ">বাংলা + English + Math</option>
+<option value="eng+equ">English + Math</option>
+<option value="ben+eng+ara+urd+fas+equ">সব ভাষা + Math</option>
 <option value="ben+eng">বাংলা + English</option>
 <option value="ben">শুধু বাংলা</option>
 <option value="eng">শুধু English</option>
 <option value="ara+urd+fas">Arabic + Urdu + Persian</option>
+<option value="equ">শুধু Math / Equation</option>
 </select>
 </div>
 </div>
+
+<p class="muted">
+Math OCR-এ সমীকরণ ও গাণিতিক চিহ্ন শনাক্ত করার জন্য equ মডেল ব্যবহার করা হয়।
+জটিল সূত্রের ক্ষেত্রে ফলাফল যাচাই করে নেবেন।
+</p>
 
 <div class="center">
 <button id="compareButton" type="button">Compare Documents</button>
@@ -138,13 +148,13 @@ select{width:100%;padding:10px;border:1px solid #ccd5e2;border-radius:7px;backgr
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/diff@5.2.0/dist/diff.min.js"></script>
 
 <script>
 "use strict";
 
 const fileInput=document.getElementById("originalFiles");
 const compareButton=document.getElementById("compareButton");
-const API_URL="https://typing-quality-backend.onrender.com";
 
 let ocrWorker=null;
 let ocrWorkerLanguage="";
@@ -161,6 +171,7 @@ compareButton.addEventListener("click",startCompare);
 function showFiles(){
 const list=document.getElementById("fileList");
 list.innerHTML="";
+
 Array.from(fileInput.files).forEach((file,index)=>{
 const item=document.createElement("div");
 item.className="file-item";
@@ -191,12 +202,14 @@ document.getElementById("statusText").textContent=message;
 }
 
 function sleepFrame(){
-return new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+return new Promise(resolve=>
+requestAnimationFrame(()=>requestAnimationFrame(resolve))
+);
 }
 
-/* ================================
+/* =====================================
    OCR WORKER
-================================ */
+===================================== */
 
 async function getOCRWorker(){
 const languages=document.getElementById("ocrLanguages").value;
@@ -212,10 +225,12 @@ return ocrWorker;
 if(ocrWorker){
 try{await ocrWorker.terminate();}catch(e){}
 ocrWorker=null;
+ocrWorkerLanguage="";
 }
 
 setProgress(5,"OCR Language Data প্রস্তুত হচ্ছে...");
 
+try{
 ocrWorker=await Tesseract.createWorker(
 languages,
 1,
@@ -223,7 +238,7 @@ languages,
 logger:m=>{
 if(m.status==="loading language traineddata"){
 setProgress(
-Math.round((m.progress||0)*15),
+Math.round((m.progress||0)*18),
 "OCR ভাষার ডেটা ডাউনলোড হচ্ছে..."
 );
 }
@@ -239,55 +254,169 @@ setProgress(
 
 ocrWorkerLanguage=languages;
 
-const quality=document.getElementById("ocrQuality").value;
+}catch(error){
+/* equ মডেল না পাওয়া গেলে সাধারণ ভাষার OCR চালু রাখবে */
+if(languages.includes("equ")){
+const fallback=languages.split("+").filter(x=>x!=="equ").join("+");
+if(fallback){
+setProgress(10,"Math মডেল পাওয়া যায়নি। সাধারণ OCR চালু হচ্ছে...");
+ocrWorker=await Tesseract.createWorker(fallback,1,{
+logger:m=>{
+if(m.status==="recognizing text"){
+setProgress(20+Math.round((m.progress||0)*60),"OCR চলছে...");
+}
+}
+});
+ocrWorkerLanguage=fallback;
+}else{
+throw new Error("Math OCR মডেল লোড করা যায়নি।");
+}
+}else{
+throw error;
+}
+}
 
-let psm="6";
-if(quality==="normal")psm="6";
-if(quality==="high")psm="3";
-if(quality==="veryhigh")psm="1";
+const quality=document.getElementById("ocrQuality").value;
 
 try{
 await ocrWorker.setParameters({
-tessedit_pageseg_mode:psm,
+tessedit_pageseg_mode:
+quality==="normal"?"6":
+quality==="high"?"3":"1",
 preserve_interword_spaces:"1"
 });
-}catch(e){}
+}catch(e){
+console.warn("OCR parameter:",e);
+}
 
 return ocrWorker;
 }
 
+/* =====================================
+   IMAGE PREPROCESSING
+===================================== */
+
+async function preprocessImage(blob){
+const quality=document.getElementById("ocrQuality").value;
+const mathMode=document.getElementById("ocrLanguages").value.includes("equ");
+
+let bitmap;
+
+try{
+bitmap=await createImageBitmap(blob);
+}catch(e){
+return blob;
+}
+
+const scale=
+quality==="normal"?1.5:
+quality==="high"?2:
+2.5;
+
+const canvas=document.createElement("canvas");
+const ctx=canvas.getContext("2d",{willReadFrequently:true});
+
+canvas.width=Math.round(bitmap.width*scale);
+canvas.height=Math.round(bitmap.height*scale);
+
+ctx.fillStyle="#ffffff";
+ctx.fillRect(0,0,canvas.width,canvas.height);
+
+ctx.imageSmoothingEnabled=true;
+ctx.imageSmoothingQuality="high";
+ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);
+
+bitmap.close();
+
+try{
+const imageData=ctx.getImageData(0,0,canvas.width,canvas.height);
+const pixels=imageData.data;
+
+let sum=0;
+const total=pixels.length/4;
+
+for(let i=0;i<pixels.length;i+=4){
+const gray=
+0.299*pixels[i]+
+0.587*pixels[i+1]+
+0.114*pixels[i+2];
+
+sum+=gray;
+}
+
+const average=sum/total;
+const contrast=quality==="normal"?1.15:1.35;
+
+/* Math-এর জন্য অতিরিক্ত threshold ব্যবহার করা হচ্ছে না */
+for(let i=0;i<pixels.length;i+=4){
+let gray=
+0.299*pixels[i]+
+0.587*pixels[i+1]+
+0.114*pixels[i+2];
+
+gray=(gray-128)*contrast+128;
+
+/* হালকা ব্যাকগ্রাউন্ড পরিষ্কার করা */
+if(!mathMode && gray>average+35)gray=255;
+
+gray=Math.max(0,Math.min(255,gray));
+
+pixels[i]=gray;
+pixels[i+1]=gray;
+pixels[i+2]=gray;
+}
+
+ctx.putImageData(imageData,0,0);
+
+}catch(e){
+console.warn("Image enhancement:",e);
+}
+
+const result=await new Promise(resolve=>
+canvas.toBlob(resolve,"image/png")
+);
+
+canvas.width=0;
+canvas.height=0;
+
+return result||blob;
+}
+
 async function recognizeImage(blob){
 const worker=await getOCRWorker();
-const result=await worker.recognize(blob);
+const enhanced=await preprocessImage(blob);
+
+const result=await worker.recognize(enhanced);
+
 return result.data.text||"";
 }
 
-/* ================================
+/* =====================================
    IMAGE FILE OCR
-================================ */
+===================================== */
 
 async function extractImage(file){
-setProgress(10,"ছবি থেকে লেখা পড়া হচ্ছে: "+file.name);
+setProgress(10,"ছবি উন্নত করা হচ্ছে: "+file.name);
 return await recognizeImage(file);
 }
 
-/* ================================
+/* =====================================
    PDF EXTRACTION
-================================ */
+===================================== */
 
 async function extractPDF(file){
 if(!window.pdfjsLib){
-throw new Error("PDF.js লোড হয়নি। ইন্টারনেট সংযোগ পরীক্ষা করুন।");
+throw new Error("PDF.js লোড হয়নি।");
 }
 
 const mode=document.getElementById("pdfMode").value;
 const quality=document.getElementById("ocrQuality").value;
 
-const buffer=await file.arrayBuffer();
-const pdf=await pdfjsLib.getDocument({data:buffer}).promise;
+const pdf=await pdfjsLib.getDocument({
+data:await file.arrayBuffer()
+}).promise;
 
 let output=[];
-let textPageCount=0;
 
 for(let pageNo=1;pageNo<=pdf.numPages;pageNo++){
 setProgress(
@@ -312,11 +441,13 @@ mode==="ocr" ||
 
 if(shouldOCR){
 const viewport=page.getViewport({
-scale:quality==="normal"?1.5:quality==="high"?2:2.5
+scale:quality==="normal"?2:
+quality==="high"?2.5:3
 });
 
 const canvas=document.createElement("canvas");
 const context=canvas.getContext("2d");
+
 canvas.width=Math.ceil(viewport.width);
 canvas.height=Math.ceil(viewport.height);
 
@@ -331,29 +462,22 @@ canvas.toBlob(resolve,"image/png")
 
 if(blob){
 const scanned=await recognizeImage(blob);
-if(scanned.trim()){
-pageText=scanned;
+if(scanned.trim())pageText=scanned;
 }
-}
+
 canvas.width=0;
 canvas.height=0;
-}else if(pageText.trim()){
-textPageCount++;
 }
 
 output.push(`\nপৃষ্ঠা ${pageNo}\n${pageText}`);
 }
 
-if(mode==="smart" && textPageCount===0 && pdf.numPages>0){
-setProgress(95,"PDF-এর স্ক্যান করা পৃষ্ঠা OCR করা হয়েছে।");
-}
-
 return output.join("\n");
 }
 
-/* ================================
-   DOCX EXTRACTION + EMBEDDED IMAGE OCR
-================================ */
+/* =====================================
+   DOCX EXTRACTION + IMAGE OCR
+===================================== */
 
 async function extractDOCX(file){
 if(!window.mammoth){
@@ -367,39 +491,38 @@ let text=result.value||"";
 const mode=document.getElementById("pdfMode").value;
 
 if(mode!=="text" && window.JSZip){
-try{
 const zip=await JSZip.loadAsync(buffer);
+
 const imageFiles=Object.keys(zip.files).filter(path=>
-/^word\/media\//i.test(path) &&
-!zip.files[path].dir
+/^word\/media\//i.test(path) && !zip.files[path].dir
 );
 
 for(let i=0;i<imageFiles.length;i++){
 const path=imageFiles[i];
+
 setProgress(
 70+Math.round((i/Math.max(1,imageFiles.length))*20),
-`DOCX-এর ছবিতে OCR হচ্ছে: ${i+1}/${imageFiles.length}`
+`DOCX ছবিতে OCR হচ্ছে: ${i+1}/${imageFiles.length}`
 );
 
 const blob=await zip.files[path].async("blob");
+
 if(blob.size>0){
 const imageText=await recognizeImage(blob);
+
 if(imageText.trim()){
 text+=`\n\n[DOCX Image: ${path}]\n${imageText}`;
 }
 }
-}
-}catch(error){
-console.warn("DOCX image OCR:",error);
 }
 }
 
 return text;
 }
 
-/* ================================
-   FILE EXTRACTION ROUTER
-================================ */
+/* =====================================
+   FILE ROUTER
+===================================== */
 
 async function extractFile(file){
 const name=file.name.toLowerCase();
@@ -423,9 +546,9 @@ return await file.text();
 throw new Error("এই ফাইল ফরম্যাট সমর্থিত নয়: "+file.name);
 }
 
-/* ================================
+/* =====================================
    QUESTION / OPTION DETECTION
-================================ */
+===================================== */
 
 function detectQuestionStart(line){
 const match=line.match(
@@ -441,19 +564,21 @@ const match=word.match(
 return match?match[1]:null;
 }
 
-/* ================================
+/* =====================================
    TOKEN DATA
-================================ */
+===================================== */
 
 function getWordData(text){
 const normalized=normalizeText(text);
 const lines=normalized.split("\n");
 const tokens=[];
+
 let currentQuestion=null;
 let currentOption=null;
 
 lines.forEach((line,lineIndex)=>{
 const detectedQuestion=detectQuestionStart(line);
+
 if(detectedQuestion){
 currentQuestion=detectedQuestion;
 currentOption=null;
@@ -480,138 +605,74 @@ optionNumber:currentOption
 return {lines,tokens};
 }
 
-/* ================================
-   MYERS DIFF
-================================ */
+/* =====================================
+   IMPROVED TOKEN DIFF
+===================================== */
 
 function compareWordsFast(original,typed){
+if(!window.Diff){
+throw new Error("Comparison Library লোড হয়নি।");
+}
+
 const originalData=getWordData(original);
 const typedData=getWordData(typed);
+
 const A=originalData.tokens;
 const B=typedData.tokens;
-const N=A.length;
-const M=B.length;
-const MAX=N+M;
+
+const changes=Diff.diffArrays(A,B,{
+comparator:(a,b)=>a.key===b.key
+});
 
 const missing=[];
 const extra=[];
 
-if(MAX===0){
-return {
-originalCount:0,typedCount:0,missing,extra,
-originalLines:originalData.lines
-};
+let originalIndex=0;
+let typedIndex=0;
+
+changes.forEach(part=>{
+if(part.removed){
+part.value.forEach(item=>{
+missing.push({
+word:item.word,
+position:originalIndex+1,
+lineIndex:item.lineIndex,
+wordInLine:item.wordInLine
+});
+originalIndex++;
+});
 }
-
-let V=new Map([[1,0]]);
-const trace=[];
-let finalD=-1;
-
-for(let d=0;d<=MAX;d++){
-trace.push(new Map(V));
-
-for(let k=-d;k<=d;k+=2){
-const left=V.has(k-1)?V.get(k-1):-Infinity;
-const right=V.has(k+1)?V.get(k+1):-Infinity;
-
-let x;
-if(k===-d || (k!==d && left<right)){
-x=right;
-}else{
-x=left+1;
-}
-
-if(!Number.isFinite(x))x=0;
-let y=x-k;
-
-while(x<N && y<M && A[x].key===B[y].key){
-x++;
-y++;
-}
-
-V.set(k,x);
-
-if(x>=N && y>=M){
-finalD=d;
-break;
-}
-}
-if(finalD!==-1)break;
-}
-
-if(finalD===-1){
-throw new Error("তুলনা সম্পন্ন করা যায়নি।");
-}
-
-let x=N;
-let y=M;
-
-for(let d=finalD;d>0;d--){
-const previousV=trace[d];
-const k=x-y;
-
-const left=previousV.has(k-1)?previousV.get(k-1):-Infinity;
-const right=previousV.has(k+1)?previousV.get(k+1):-Infinity;
-
-let previousK;
-if(k===-d || (k!==d && left<right)){
-previousK=k+1;
-}else{
-previousK=k-1;
-}
-
-const previousX=previousV.has(previousK)
-?previousV.get(previousK):0;
-const previousY=previousX-previousK;
-
-while(x>previousX && y>previousY){
-x--;
-y--;
-}
-
-if(x===previousX){
-if(y>0){
-const item=B[y-1];
+else if(part.added){
+part.value.forEach(item=>{
 extra.push({
 word:item.word,
-position:item.position,
+position:typedIndex+1,
 lineIndex:item.lineIndex,
 wordInLine:item.wordInLine,
 questionNumber:item.questionNumber,
 optionNumber:item.optionNumber
 });
-}
-}else{
-if(x>0){
-const item=A[x-1];
-missing.push({
-word:item.word,
-position:x,
-lineIndex:item.lineIndex,
-wordInLine:item.wordInLine
+typedIndex++;
 });
 }
+else{
+originalIndex+=part.value.length;
+typedIndex+=part.value.length;
 }
-
-x=previousX;
-y=previousY;
-}
-
-missing.reverse();
-extra.reverse();
+});
 
 return {
-originalCount:N,
-typedCount:M,
+originalCount:A.length,
+typedCount:B.length,
 missing,
 extra,
 originalLines:originalData.lines
 };
 }
 
-/* ================================
+/* =====================================
    ORIGINAL QUESTION GROUPS
-================================ */
+===================================== */
 
 function buildQuestionGroups(lines){
 const starts=[];
@@ -643,18 +704,18 @@ starts.forEach((item,index)=>{
 groups.push({
 label:"প্রশ্ন "+item.number,
 start:item.lineIndex,
-end:index+1<starts.length
-?starts[index+1].lineIndex-1
-:lines.length-1
+end:index+1<starts.length?
+starts[index+1].lineIndex-1:
+lines.length-1
 });
 });
 
 return groups;
 }
 
-/* ================================
+/* =====================================
    ORIGINAL MISSING HIGHLIGHT
-================================ */
+===================================== */
 
 function renderQuestionGroup(group,data,missingPositions){
 let html="";
@@ -667,11 +728,14 @@ const words=line.split(/\s+/u).filter(Boolean);
 if(lineIndex>=group.start && lineIndex<=group.end){
 const rendered=words.map(word=>{
 const position=globalPosition++;
+
 if(missingPositions.has(position)){
 return '<span class="missing-mark">'+escapeHTML(word)+'</span>';
 }
+
 return escapeHTML(word);
 });
+
 html+=rendered.join(" ")+"\n";
 }else{
 globalPosition+=words.length;
@@ -681,9 +745,9 @@ globalPosition+=words.length;
 return html.trimEnd();
 }
 
-/* ================================
+/* =====================================
    REPORT
-================================ */
+===================================== */
 
 function showReport(data){
 const report=document.getElementById("report");
@@ -707,9 +771,11 @@ groups.forEach(group=>{
 const groupMissing=data.missing.filter(item=>
 item.lineIndex>=group.start && item.lineIndex<=group.end
 );
+
 if(!groupMissing.length)return;
 
 shownAnyGroup=true;
+
 const missingText=groupMissing.map(item=>item.word).join(" ");
 
 html+=`
@@ -799,8 +865,6 @@ html+='<h3 class="success">✓ দুটি লেখার শব্দ মি�
 html+=`
 <p class="muted">
 প্রশ্ন নম্বর ও অপশন Typed Text-এর বিন্যাস অনুযায়ী শনাক্ত করা হয়।
-প্রশ্ন বা অপশন শনাক্ত করা না গেলে শনাক্ত করা যায়নি দেখানো হবে।
-একই প্রশ্নের অতিরিক্ত শব্দ একটি কার্ডে এবং প্রতিটি অপশন আলাদা লাইনে দেখানো হয়।
 লাল রঙে চিহ্নিত শব্দগুলো Original থেকে বাদ পড়েছে।
 অবস্থান বলতে শব্দের ক্রমিক নম্বর বোঝানো হয়েছে, Word-এর প্রকৃত পৃষ্ঠা নম্বর নয়।
 OCR-এর ভুল তুলনার ফলকে প্রভাবিত করতে পারে।
@@ -809,9 +873,9 @@ OCR-এর ভুল তুলনার ফলকে প্রভাবিত �
 report.innerHTML=html;
 }
 
-/* ================================
+/* =====================================
    MAIN COMPARISON
-================================ */
+===================================== */
 
 async function startCompare(){
 const report=document.getElementById("report");
@@ -838,6 +902,7 @@ return;
 compareButton.disabled=true;
 compareButton.textContent="Processing...";
 typingWrap.classList.add("scanning");
+
 document.getElementById("progressArea").style.display="block";
 setProgress(0,"প্রস্তুতি চলছে...");
 report.innerHTML='<p class="muted">তুলনা চলছে...</p>';
@@ -868,6 +933,7 @@ setProgress(85,"তুলনার প্রস্তুতি চলছে...")
 await sleepFrame();
 
 setProgress(90,"শব্দ তুলনা করা হচ্ছে...");
+
 const result=compareWordsFast(originalText,typed);
 
 setProgress(100,"তুলনা সম্পন্ন হয়েছে।");
@@ -875,9 +941,11 @@ showReport(result);
 
 }catch(error){
 console.error(error);
+
 report.innerHTML='<p class="error">'+
 escapeHTML(error.message||"অজানা সমস্যা হয়েছে।")+
 '</p>';
+
 }finally{
 typingWrap.classList.remove("scanning");
 compareButton.disabled=false;
