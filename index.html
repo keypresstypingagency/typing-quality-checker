@@ -638,25 +638,28 @@ function showReport(data){
 
  }
 
+
  // Extra Words
  if(data.extra.length){
+
+  const firstPosition=data.extra[0].position;
+
+  const extraSentence=data.extra
+   .map(item=>item.word)
+   .join(" ");
 
   html+=`
   <h3 class="error">
   ➕ Typed Text-এ অতিরিক্ত আছে
   </h3>
+
+  <div class="result-item">
+   <b>Typed Text-এর শব্দের অবস্থান: ${firstPosition}</b>
+   <p class="error">
+    ${escapeHTML(firstPosition+". "+extraSentence)}
+   </p>
+  </div>
   `;
-
-  data.extra.forEach(item=>{
-
-   html+=`
-   <div class="result-item">
-   <b>Typed Text-এর শব্দের অবস্থান: ${item.position}</b>
-   <p class="error">${escapeHTML(item.word)}</p>
-   </div>
-   `;
-
-  });
 
  }
 
