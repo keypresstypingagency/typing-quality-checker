@@ -40,6 +40,7 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .progress div{height:100%;width:0;background:#1765d1;transition:width .2s}
 .extra-info{background:#fff5f5;border:1px solid #f5d0d0;padding:10px;border-radius:7px;margin-top:10px}
 .extra-info p{margin:5px 0}
+.extra-line{margin:9px 0;padding:9px 11px;background:#fffafa;border-left:3px solid #c0392b;border-radius:4px;line-height:1.8;overflow-wrap:anywhere}
 @media(max-width:750px){
 .workspace{grid-template-columns:1fr}
 .stats{grid-template-columns:repeat(2,1fr)}
@@ -282,24 +283,6 @@ return result.text||"";
    QUESTION AND OPTION DETECTION
    ========================================= */
 
-/*
-Typed Text-এর প্রতিটি শব্দের সঙ্গে
-প্রশ্ন নম্বর ও অপশন নম্বর সংরক্ষণ করা হয়।
-
-সমর্থিত প্রশ্ন ফরম্যাট:
-১০০. প্রশ্ন
-১০০) প্রশ্ন
-100. প্রশ্ন
-প্রশ্ন ১০০:
-
-সমর্থিত অপশন:
-ক) খ) গ) ঘ)
-ক. খ. গ. ঘ.
-(ক) (খ) (গ) (ঘ)
-A) B) C) D)
-A. B. C. D.
-*/
-
 function detectQuestionStart(line){
 
 const match=line.match(
@@ -346,9 +329,6 @@ lines.forEach((line,lineIndex)=>{
 
 lineStartPositions[lineIndex]=tokens.length+1;
 
-
-// নতুন প্রশ্ন শনাক্ত
-
 const detectedQuestion=detectQuestionStart(line);
 
 if(detectedQuestion){
@@ -359,14 +339,9 @@ currentOption=null;
 
 }
 
-
-// প্রতিটি লাইনের শব্দ
-
 const words=line.split(/\s+/u).filter(Boolean);
 
 words.forEach((word,wordInLine)=>{
-
-// অপশন শনাক্ত
 
 const detectedOption=detectOptionStart(word);
 
@@ -382,9 +357,6 @@ word,
 lineIndex,
 wordInLine,
 position:tokens.length+1,
-
-// Extra শনাক্ত করার জন্য
-
 questionNumber:currentQuestion,
 optionNumber:currentOption
 
@@ -773,15 +745,9 @@ return html.trimEnd();
    EXTRA WORD GROUPING
    ========================================= */
 
-/*
-একই প্রশ্ন ও অপশনের Extra শব্দগুলো
-একসঙ্গে দেখাবে।
-*/
-
 function groupExtraWords(extra){
 
 const groups=new Map();
-
 
 extra.forEach(item=>{
 
@@ -790,7 +756,6 @@ const question=item.questionNumber||null;
 const option=item.optionNumber||null;
 
 const key=(question||"unknown")+"|"+(option||"unknown");
-
 
 if(!groups.has(key)){
 
@@ -804,11 +769,9 @@ items:[]
 
 }
 
-
 groups.get(key).items.push(item);
 
 });
-
 
 return Array.from(groups.values());
 
@@ -822,7 +785,6 @@ return Array.from(groups.values());
 function showReport(data){
 
 const report=document.getElementById("report");
-
 
 let html=`
 
@@ -859,38 +821,28 @@ if(data.missing.length){
 
 html+=`<h3 class="error">❌ Original থেকে বাদ পড়েছে</h3>`;
 
-
 const missingPositions=new Set(
-
 data.missing.map(item=>item.position)
-
 );
-
 
 const groups=buildQuestionGroups(data.originalLines||[]);
 
 let shownAnyGroup=false;
 
-
 groups.forEach(group=>{
 
 const groupMissing=data.missing.filter(item=>
-
 item.lineIndex>=group.start&&
 item.lineIndex<=group.end
-
 );
-
 
 if(!groupMissing.length)return;
 
 shownAnyGroup=true;
 
-
 const missingText=groupMissing
 .map(item=>item.word)
 .join(" ");
-
 
 html+=`
 
@@ -901,9 +853,7 @@ ${escapeHTML(group.label)} — Missing অংশ
 </b>
 
 <div class="question-context">
-
 ${renderQuestionGroup(group,data,missingPositions)}
-
 </div>
 
 <p class="error">
@@ -916,7 +866,6 @@ ${escapeHTML(missingText)}
 `;
 
 });
-
 
 if(!shownAnyGroup){
 
@@ -942,80 +891,105 @@ html+=`
 
 
 /* =========================================
-   EXTRA REPORT WITH QUESTION AND OPTION
+   EXTRA REPORT - ONE QUESTION, ALL OPTIONS
    ========================================= */
 
 if(data.extra.length){
 
 html+=`
-
 <h3 class="error">
 ➕ Typed Text-এ অতিরিক্ত আছে
 </h3>
-
 `;
 
+const questionGroups=new Map();
 
-const extraGroups=groupExtraWords(data.extra);
+data.extra.forEach(item=>{
+
+const question=item.questionNumber||"unknown";
+
+if(!questionGroups.has(question)){
+
+questionGroups.set(question,{
+
+question,
+questionItems:[],
+options:new Map(),
+positions:[]
+
+});
+
+}
+
+const group=questionGroups.get(question);
+
+group.positions.push(item.position);
+
+if(item.optionNumber){
+
+if(!group.options.has(item.optionNumber)){
+
+group.options.set(item.optionNumber,[]);
+
+}
+
+group.options.get(item.optionNumber).push(item.word);
+
+}else{
+
+group.questionItems.push(item.word);
+
+}
+
+});
 
 
-extraGroups.forEach(group=>{
-
-const extraSentence=group.items
-.map(item=>item.word)
-.join(" ");
-
-
-const positions=group.items
-.map(item=>item.position)
-.join(", ");
-
-
-const questionText=group.question
-?escapeHTML(group.question)
-:"শনাক্ত করা যায়নি";
-
-
-const optionText=group.option
-?escapeHTML(group.option)
-:"শনাক্ত করা যায়নি";
-
+questionGroups.forEach(group=>{
 
 html+=`
-
 <div class="result-item">
 
 <div class="extra-info">
 
 <p>
 <b>📌 প্রশ্ন নম্বর:</b>
-${questionText}
-</p>
-
-<p>
-<b>📝 অপশন:</b>
-${optionText}
+${group.question==="unknown"
+?"শনাক্ত করা যায়নি"
+:escapeHTML(group.question)}
 </p>
 
 </div>
+`;
 
-<p class="error">
+if(group.questionItems.length){
 
-<b>অতিরিক্ত শব্দ:</b>
+html+=`
+<div class="extra-line error">
+<b>প্রশ্নের অতিরিক্ত লেখা:</b>
+${escapeHTML(group.questionItems.join(" "))}
+</div>
+`;
 
-${escapeHTML(extraSentence)}
+}
 
-</p>
+group.options.forEach((words,option)=>{
 
+html+=`
+<div class="extra-line error">
+<b>অপশন ${escapeHTML(option)}:</b>
+${escapeHTML(words.join(" "))}
+</div>
+`;
+
+});
+
+html+=`
 <p class="muted">
-
 <b>Typed Text-এ শব্দের অবস্থান:</b>
-${positions}
-
+${group.positions.join(", ")}
 </p>
 
 </div>
-
 `;
 
 });
@@ -1028,11 +1002,9 @@ ${positions}
 if(!data.missing.length&&!data.extra.length){
 
 html+=`
-
 <h3 class="success">
 ✓ দুটি লেখার শব্দ মিলে গেছে।
 </h3>
-
 `;
 
 }
@@ -1041,21 +1013,16 @@ html+=`
 /* FOOTNOTE */
 
 html+=`
-
 <p class="muted">
-
 প্রশ্ন নম্বর ও অপশন Typed Text-এর বিন্যাস অনুযায়ী শনাক্ত করা হয়।
 প্রশ্ন বা অপশন শনাক্ত করা না গেলে শনাক্ত করা যায়নি দেখানো হবে।
-একই প্রশ্ন ও অপশনের অতিরিক্ত শব্দ একসঙ্গে দেখানো হয়।
+একই প্রশ্নের অতিরিক্ত শব্দ একটি কার্ডে এবং প্রতিটি অপশন আলাদা লাইনে দেখানো হয়।
 লাল রঙে চিহ্নিত শব্দগুলো Original থেকে বাদ পড়েছে।
 Original-এ থাকা প্রশ্ন ও অপশনই দেখানো হয়; কোনো প্রশ্ন বা অপশন বানিয়ে যোগ করা হয় না।
 অবস্থান বলতে শব্দের ক্রমিক নম্বর বোঝানো হয়েছে, Word-এর প্রকৃত পৃষ্ঠা নম্বর নয়।
 OCR-এর ভুল তুলনার ফলকে প্রভাবিত করতে পারে।
-
 </p>
-
 `;
-
 
 report.innerHTML=html;
 
@@ -1110,21 +1077,16 @@ compareButton.textContent="Processing...";
 
 typingWrap.classList.add("scanning");
 
-
 document.getElementById("progressArea").style.display="block";
 
 document.getElementById("progressBar").style.width="0%";
 
-
 report.innerHTML=
 '<p class="muted">তুলনা চলছে...</p>';
 
-
 try{
 
-
 let originalText="";
-
 
 // সব ফাইল থেকে লেখা সংগ্রহ
 
@@ -1138,9 +1100,7 @@ Math.round((i/files.length)*80),
 
 );
 
-
 const text=await extractFile(files[i]);
-
 
 if(!text.trim()){
 
@@ -1150,14 +1110,11 @@ files[i].name+" থেকে কোনো লেখা পাওয়া যায়
 
 }
 
-
 originalText+="\n"+text+"\n";
 
 }
 
-
 setProgress(85,"তুলনার প্রস্তুতি চলছে...");
-
 
 await new Promise(resolve=>
 
@@ -1169,23 +1126,17 @@ requestAnimationFrame(resolve)
 
 );
 
-
 setProgress(90,"Myers Diff দিয়ে শব্দ তুলনা করা হচ্ছে...");
-
 
 const result=compareWordsFast(originalText,typed);
 
-
 setProgress(100,"তুলনা সম্পন্ন হয়েছে।");
 
-
 showReport(result);
-
 
 }catch(error){
 
 console.error(error);
-
 
 report.innerHTML=
 
@@ -1193,9 +1144,7 @@ report.innerHTML=
 escapeHTML(error.message||"অজানা সমস্যা হয়েছে।")+
 '</p>';
 
-
 }finally{
-
 
 typingWrap.classList.remove("scanning");
 
