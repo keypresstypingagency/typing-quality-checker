@@ -73,9 +73,7 @@ background:white;
 display:block
 }
 
-#originalText{
-min-height:220px
-}
+#originalText{min-height:220px}
 
 .scan-overlay{
 display:none;
@@ -87,9 +85,7 @@ overflow:hidden;
 border-radius:8px
 }
 
-.typing-wrap.scanning .scan-overlay{
-display:block
-}
+.typing-wrap.scanning .scan-overlay{display:block}
 
 .scan-overlay::after{
 content:"";
@@ -98,9 +94,7 @@ left:0;
 right:0;
 top:0;
 height:3px;
-background:linear-gradient(
-90deg,transparent,#ff2525,#ff7777,#ff2525,transparent
-);
+background:linear-gradient(90deg,transparent,#ff2525,#ff7777,#ff2525,transparent);
 box-shadow:0 0 12px 3px #ff252580;
 animation:scanMove 1.5s linear infinite
 }
@@ -126,20 +120,10 @@ opacity:.5;
 cursor:not-allowed
 }
 
-.center{
-text-align:center;
-margin-top:20px
-}
+.center{text-align:center;margin-top:20px}
+.muted{color:#667085;font-size:13px}
 
-.muted{
-color:#667085;
-font-size:13px
-}
-
-.file-list{
-text-align:left;
-margin-top:15px
-}
+.file-list{text-align:left;margin-top:15px}
 
 .file-item{
 background:white;
@@ -243,11 +227,44 @@ line-height:1.8;
 overflow-wrap:anywhere
 }
 
+.pdf-settings{
+margin-top:15px;
+padding:14px;
+background:#eef4ff;
+border-radius:9px;
+text-align:left
+}
+
+.pdf-settings label{
+display:block;
+font-weight:bold;
+margin-bottom:8px
+}
+
+.pdf-settings select{
+width:100%;
+padding:10px;
+border:1px solid #ccd5e2;
+border-radius:7px;
+background:white;
+font-size:14px;
+color:#172b4d
+}
+
 @media(max-width:750px){
 .workspace{grid-template-columns:1fr}
 .stats{grid-template-columns:repeat(2,1fr)}
 }
 </style>
+
+<!-- PDF.js: PDF পড়ার জন্য -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+<!-- DOCX: Word ফাইল পড়ার জন্য -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
+
+<!-- Tesseract: বাংলা ও ইংরেজি OCR -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
 </head>
 
 <body>
@@ -291,6 +308,33 @@ accept=".pdf,.docx,.txt,.jpg,.jpeg,.png,.webp"
 <p class="muted">
 একাধিক ফাইল নির্বাচন করতে পারবেন
 </p>
+
+</div>
+
+<!-- PDF MODE SETTINGS -->
+
+<div class="pdf-settings">
+
+<label for="pdfMode">📄 PDF পড়ার পদ্ধতি নির্বাচন করুন</label>
+
+<select id="pdfMode">
+<option value="smart">Smart Mode — সাধারণ PDF + প্রয়োজন হলে OCR</option>
+<option value="ocr">বাংলা OCR Mode — প্রতিটি PDF পৃষ্ঠা ছবি হিসেবে পড়বে</option>
+<option value="text">শুধু PDF Text Extract — OCR ব্যবহার করবে না</option>
+</select>
+
+<p class="muted">
+বাংলা PDF-এর লেখা ভেঙে গেলে অথবা অক্ষর ভুল দেখালে
+বাংলা OCR Mode নির্বাচন করুন।
+</p>
+
+<label for="ocrScale">OCR Quality</label>
+
+<select id="ocrScale">
+<option value="2">Normal</option>
+<option value="2.5" selected>High — Recommended</option>
+<option value="3">Very High — বেশি সময় লাগবে</option>
+</select>
 
 </div>
 
@@ -377,23 +421,25 @@ Compare Documents
 
 </main>
 
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
-
 <script>
 "use strict";
 
-const API_URL =
-"https://typing-quality-backend.onrender.com";
+/* =========================================
+   LIBRARY SETTINGS
+========================================= */
 
-const fileInput =
-document.getElementById("originalFiles");
+if(window.pdfjsLib){
+pdfjsLib.GlobalWorkerOptions.workerSrc=
+"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+}
 
-const compareButton =
-document.getElementById("compareButton");
+const fileInput=document.getElementById("originalFiles");
+const compareButton=document.getElementById("compareButton");
 
 fileInput.addEventListener("change",showFiles);
-
 compareButton.addEventListener("click",startCompare);
+
+let ocrWorker=null;
 
 
 /* =========================================
@@ -423,6 +469,20 @@ list.appendChild(item);
 
 
 /* =========================================
+   PROGRESS
+========================================= */
+
+function setProgress(percent,message){
+
+document.getElementById("progressBar").style.width=
+Math.max(0,Math.min(100,percent))+"%";
+
+document.getElementById("statusText").textContent=message;
+
+}
+
+
+/* =========================================
    TEXT NORMALIZATION
 ========================================= */
 
@@ -434,6 +494,16 @@ return String(text)
 .replace(/\r\n/g,"\n")
 .replace(/\r/g,"\n")
 .trim();
+
+}
+
+
+function cleanExtractedText(text){
+
+return normalizeText(text)
+.replace(/\u0000/g,"")
+.replace(/[ \t]+\n/g,"\n")
+.replace(/\n{3,}/g,"\n\n");
 
 }
 
@@ -453,43 +523,32 @@ return String(value).replace(/[&<>"']/g,c=>({
 }
 
 
-function setProgress(percent,message){
-
-document.getElementById("progressBar").style.width=
-percent+"%";
-
-document.getElementById("statusText").textContent=
-message;
-
-}
-
-
 /* =========================================
-   FILE EXTRACTION
+   OCR WORKER
 ========================================= */
 
-async function extractFile(file){
-
-const name=file.name.toLowerCase();
-
-
-// IMAGE OCR
-
-if(/\.(jpg|jpeg|png|webp)$/i.test(name)){
+async function getOCRWorker(){
 
 if(!window.Tesseract){
 
 throw new Error(
-"ছবির OCR Library লোড হয়নি। ইন্টারনেট সংযোগ পরীক্ষা করুন।"
+"OCR Library লোড হয়নি। ইন্টারনেট সংযোগ পরীক্ষা করুন।"
 );
 
 }
 
-const result=await Tesseract.recognize(
+if(!ocrWorker){
 
-file,
+setProgress(
+5,
+"বাংলা OCR প্রস্তুত হচ্ছে। প্রথমবার ভাষার ফাইল ডাউনলোড হতে পারে..."
+);
+
+ocrWorker=await Tesseract.createWorker(
 
 "ben+eng",
+
+1,
 
 {
 logger:m=>{
@@ -498,7 +557,7 @@ if(m.status==="recognizing text"){
 
 setProgress(
 Math.round((m.progress||0)*100),
-"ছবি থেকে লেখা পড়া হচ্ছে..."
+"বাংলা ও ইংরেজি লেখা পড়া হচ্ছে..."
 );
 
 }
@@ -509,58 +568,234 @@ Math.round((m.progress||0)*100),
 
 );
 
-return result.data.text||"";
+}
+
+return ocrWorker;
 
 }
 
 
-// PDF, DOCX, TXT
+/* =========================================
+   IMAGE OCR
+========================================= */
 
-const formData=new FormData();
+async function recognizeImage(file){
 
-formData.append("file",file);
+setProgress(
+5,
+"ছবি থেকে বাংলা ও ইংরেজি লেখা পড়া হচ্ছে..."
+);
 
-let response;
+const worker=await getOCRWorker();
 
-try{
+const result=await worker.recognize(file);
 
-response=await fetch(API_URL+"/extract",{
+return cleanExtractedText(result.data.text||"");
 
-method:"POST",
+}
 
-body:formData
 
-});
+/* =========================================
+   PDF TEXT EXTRACTION
+========================================= */
 
-}catch(error){
+async function extractPDFText(file){
+
+if(!window.pdfjsLib){
 
 throw new Error(
-"Backend সার্ভারে সংযোগ করা যাচ্ছে না। কিছুক্ষণ পর আবার চেষ্টা করুন।"
+"PDF.js Library লোড হয়নি। ইন্টারনেট সংযোগ পরীক্ষা করুন।"
 );
 
 }
 
+const mode=document.getElementById("pdfMode").value;
 
-if(!response.ok){
+const scale=
+Number(document.getElementById("ocrScale").value)||2.5;
 
-let message="ফাইল পড়তে সমস্যা হয়েছে।";
+const fileData=new Uint8Array(await file.arrayBuffer());
 
-try{
+const pdf=await pdfjsLib.getDocument({
+data:fileData
+}).promise;
 
-const error=await response.json();
+let worker=null;
 
-message=error.detail||message;
+const pages=[];
 
-}catch(e){}
+for(let pageNo=1;pageNo<=pdf.numPages;pageNo++){
 
-throw new Error(file.name+": "+message);
+setProgress(
+
+Math.round((pageNo/pdf.numPages)*90),
+
+`PDF পৃষ্ঠা পড়া হচ্ছে: ${pageNo}/${pdf.numPages}`
+
+);
+
+const page=await pdf.getPage(pageNo);
+
+let pageText="";
+
+let shouldOCR=(mode==="ocr");
+
+
+/* PDF থেকে সরাসরি Text নেওয়া */
+
+if(mode!=="ocr"){
+
+const content=await page.getTextContent();
+
+pageText=content.items
+.map(item=>item.str||"")
+.join(" ")
+.replace(/[ \t]+/g," ")
+.trim();
+
+
+/* Smart Mode: প্রয়োজন হলে OCR */
+
+if(mode==="smart"){
+
+const bengaliCount=
+(pageText.match(/[\u0980-\u09FF]/g)||[]).length;
+
+const replacementCount=
+(pageText.match(/\uFFFD/g)||[]).length;
+
+const privateUseCount=
+(pageText.match(/[\uE000-\uF8FF]/g)||[]).length;
+
+shouldOCR=
+
+pageText.length<25||
+replacementCount>0||
+privateUseCount>0||
+(bengaliCount===0&&pageText.length<250);
+
+}
 
 }
 
 
-const result=await response.json();
+/* PDF PAGE OCR */
 
-return result.text||"";
+if(shouldOCR){
+
+if(!worker){
+
+worker=await getOCRWorker();
+
+}
+
+setProgress(
+
+Math.round(((pageNo-0.5)/pdf.numPages)*90),
+
+`বাংলা OCR চলছে: PDF পৃষ্ঠা ${pageNo}/${pdf.numPages}`
+
+);
+
+const viewport=page.getViewport({
+scale:scale
+});
+
+const canvas=document.createElement("canvas");
+
+const context=canvas.getContext("2d",{
+willReadFrequently:true
+});
+
+canvas.width=Math.ceil(viewport.width);
+canvas.height=Math.ceil(viewport.height);
+
+await page.render({
+
+canvasContext:context,
+viewport:viewport
+
+}).promise;
+
+const result=await worker.recognize(canvas);
+
+pageText=result.data.text||"";
+
+canvas.width=0;
+canvas.height=0;
+
+}
+
+pages.push(pageText);
+
+}
+
+return cleanExtractedText(pages.join("\n\n"));
+
+}
+
+
+/* =========================================
+   FILE EXTRACTION - NO BACKEND
+========================================= */
+
+async function extractFile(file){
+
+const name=file.name.toLowerCase();
+
+
+/* TXT FILE */
+
+if(name.endsWith(".txt")||file.type==="text/plain"){
+
+return cleanExtractedText(await file.text());
+
+}
+
+
+/* DOCX FILE */
+
+if(name.endsWith(".docx")){
+
+if(!window.mammoth){
+
+throw new Error(
+"DOCX Library লোড হয়নি।"
+);
+
+}
+
+const arrayBuffer=await file.arrayBuffer();
+
+const result=await mammoth.extractRawText({
+arrayBuffer:arrayBuffer
+});
+
+return cleanExtractedText(result.value||"");
+
+}
+
+
+/* PDF FILE */
+
+if(name.endsWith(".pdf")||file.type==="application/pdf"){
+
+return await extractPDFText(file);
+
+}
+
+
+/* IMAGE FILE */
+
+if(/\.(jpg|jpeg|png|webp)$/i.test(name)){
+
+return await recognizeImage(file);
+
+}
+
+throw new Error(
+file.name+": এই ফাইল ফরম্যাট সমর্থিত নয়।"
+);
 
 }
 
@@ -1194,9 +1429,7 @@ ${escapeHTML(item.word)}
 }
 
 
-/* =========================================
-   EXTRA REPORT
-========================================= */
+/* EXTRA REPORT */
 
 if(data.extra.length){
 
@@ -1388,8 +1621,6 @@ const typingWrap=
 document.getElementById("typingWrap");
 
 
-// ORIGINAL INPUT VALIDATION
-
 if(!files.length&&!originalInput.trim()){
 
 alert(
@@ -1400,8 +1631,6 @@ return;
 
 }
 
-
-// TYPED TEXT VALIDATION
 
 if(!typed.trim()){
 
@@ -1414,8 +1643,6 @@ return;
 }
 
 
-// FILE LIMIT
-
 if(files.length>50){
 
 alert(
@@ -1426,8 +1653,6 @@ return;
 
 }
 
-
-// START PROCESSING
 
 compareButton.disabled=true;
 
@@ -1445,12 +1670,10 @@ report.innerHTML=
 
 try{
 
-// DIRECT TEXT FIRST
-
 let originalText=originalInput;
 
 
-// EXTRACT ALL SELECTED FILES
+/* EXTRACT ALL SELECTED FILES */
 
 for(let i=0;i<files.length;i++){
 
@@ -1473,15 +1696,10 @@ files[i].name+" থেকে কোনো লেখা পাওয়া যায়
 
 }
 
-
-// APPEND FILE TEXT
-
 originalText+="\n"+extractedText+"\n";
 
 }
 
-
-// FINAL ORIGINAL VALIDATION
 
 if(!originalText.trim()){
 
@@ -1515,15 +1733,11 @@ setProgress(
 );
 
 
-// COMPARE
-
 const result=compareWordsFast(
 originalText,
 typed
 );
 
-
-// DISPLAY RESULT
 
 setProgress(
 100,
