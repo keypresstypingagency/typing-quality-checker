@@ -31,6 +31,9 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .stat strong{display:block;font-size:23px;color:#1765d1}
 .result-item{border:1px solid #e1e7f0;padding:12px;margin:8px 0;border-radius:8px;background:white;overflow-wrap:anywhere}
 .error{color:#c0392b}.success{color:#087b58}
+.question-context{margin-top:10px;padding:12px;background:#f8fafc;border:1px solid #e1e7f0;border-radius:8px;white-space:pre-wrap;line-height:1.9;font-size:14px}
+.missing-mark{color:#c0392b;background:#ffe5e5;border-bottom:2px solid #c0392b;font-weight:bold;padding:1px 2px;border-radius:3px}
+.question-label{display:block;margin-bottom:8px;color:#172b4d}
 .progress{background:#e8edf5;border-radius:20px;height:9px;overflow:hidden;margin:12px 0}
 .progress div{height:100%;width:0;background:#1765d1;transition:width .2s}
 @media(max-width:750px){.workspace{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}}
@@ -204,15 +207,38 @@ async function extractFile(file){
    EXACT WORD COMPARISON - MYERS DIFF
    ========================================= */
 
+function getWordData(text){
+  const normalized = normalizeText(text);
+  const lines = normalized.split("\n");
+  const tokens = [];
+  const lineStartPositions = [];
+
+  lines.forEach((line,lineIndex)=>{
+    lineStartPositions[lineIndex] = tokens.length + 1;
+    line.split(/\s+/u).filter(Boolean).forEach((word,wordInLine)=>{
+      tokens.push({
+        word,
+        lineIndex,
+        wordInLine,
+        position:tokens.length+1
+      });
+    });
+  });
+
+  return {lines,tokens,lineStartPositions};
+}
+
+/*
+  Myers Diff: শব্দের ক্রম ধরে exact shortest-edit comparison.
+  Matching শব্দগুলো বাদ দিয়ে কেবল Missing ও Extra শনাক্ত করে।
+*/
 function compareWordsFast(original,typed){
 
-  const A = normalizeText(original)
-    .split(/\s+/u)
-    .filter(Boolean);
+  const originalData = getWordData(original);
+  const typedData = getWordData(typed);
 
-  const B = normalizeText(typed)
-    .split(/\s+/u)
-    .filter(Boolean);
+  const A = originalData.tokens;
+  const B = typedData.tokens;
 
   const N = A.length;
   const M = B.length;
@@ -226,15 +252,14 @@ function compareWordsFast(original,typed){
       originalCount:0,
       typedCount:0,
       missing,
-      extra
+      extra,
+      originalLines:originalData.lines,
+      lineStartPositions:originalData.lineStartPositions
     };
   }
 
-  // Myers algorithm-এর diagonal map
   let V = new Map();
   V.set(1,0);
-
-  // প্রতিটি ধাপের আগের অবস্থান সংরক্ষণ
   const trace = [];
 
   let finalD = 0;
@@ -246,15 +271,10 @@ function compareWordsFast(original,typed){
 
     for(let k=-d; k<=d; k+=2){
 
+      const left = V.has(k-1) ? V.get(k-1) : -Infinity;
+      const right = V.has(k+1) ? V.get(k+1) : -Infinity;
+
       let x;
-
-      const left = V.has(k-1)
-        ? V.get(k-1)
-        : -Infinity;
-
-      const right = V.has(k+1)
-        ? V.get(k+1)
-        : -Infinity;
 
       if(k === -d || (k !== d && left < right)){
         x = right;
@@ -262,17 +282,14 @@ function compareWordsFast(original,typed){
         x = left + 1;
       }
 
-      if(!Number.isFinite(x)){
-        x = 0;
-      }
+      if(!Number.isFinite(x)) x = 0;
 
       let y = x-k;
 
-      // একই শব্দের ধারাবাহিক মিল খোঁজা
       while(
         x < N &&
         y < M &&
-        A[x] === B[y]
+        A[x].word === B[y].word
       ){
         x++;
         y++;
@@ -280,7 +297,6 @@ function compareWordsFast(original,typed){
 
       V.set(k,x);
 
-      // শেষ পর্যন্ত পৌঁছেছে কি না
       if(x >= N && y >= M){
         finalD = d;
         finished = true;
@@ -295,7 +311,6 @@ function compareWordsFast(original,typed){
     throw new Error("তুলনা সম্পন্ন করা যায়নি। আবার চেষ্টা করুন।");
   }
 
-  // Myers path থেকে Missing ও Extra বের করা
   let x = N;
   let y = M;
 
@@ -304,13 +319,8 @@ function compareWordsFast(original,typed){
     const previousV = trace[d];
     const k = x-y;
 
-    const left = previousV.has(k-1)
-      ? previousV.get(k-1)
-      : -Infinity;
-
-    const right = previousV.has(k+1)
-      ? previousV.get(k+1)
-      : -Infinity;
+    const left = previousV.has(k-1) ? previousV.get(k-1) : -Infinity;
+    const right = previousV.has(k+1) ? previousV.get(k+1) : -Infinity;
 
     let previousK;
 
@@ -326,32 +336,25 @@ function compareWordsFast(original,typed){
 
     const previousY = previousX-previousK;
 
-    // মিল পাওয়া শব্দগুলো পেছনে সরানো
-    while(
-      x > previousX &&
-      y > previousY
-    ){
+    while(x > previousX && y > previousY){
       x--;
       y--;
     }
 
-    // Typed Text-এ অতিরিক্ত শব্দ
     if(x === previousX){
-
       if(y > 0){
         extra.push({
-          word:B[y-1],
+          word:B[y-1].word,
           position:y
         });
       }
-
     }else{
-
-      // Original থেকে বাদ পড়া শব্দ
       if(x > 0){
         missing.push({
-          word:A[x-1],
-          position:x
+          word:A[x-1].word,
+          position:x,
+          lineIndex:A[x-1].lineIndex,
+          wordInLine:A[x-1].wordInLine
         });
       }
     }
@@ -360,7 +363,6 @@ function compareWordsFast(original,typed){
     y = previousY;
   }
 
-  // Reverse করে সঠিক ক্রমে আনা
   missing.reverse();
   extra.reverse();
 
@@ -368,8 +370,87 @@ function compareWordsFast(original,typed){
     originalCount:N,
     typedCount:M,
     missing,
-    extra
+    extra,
+    originalLines:originalData.lines,
+    lineStartPositions:originalData.lineStartPositions
   };
+}
+
+/* প্রশ্ন নম্বর ধরে Original-এর অংশগুলো ভাগ করে */
+function buildQuestionGroups(lines){
+
+  const starts = [];
+
+  lines.forEach((line,index)=>{
+    const match = line.match(/^\s*([০-৯0-9]{1,4})\s*[.)।ঃ:]\s*/);
+    if(match){
+      starts.push({
+        lineIndex:index,
+        number:match[1]
+      });
+    }
+  });
+
+  if(!starts.length){
+    return [{
+      label:"Original অংশ",
+      start:0,
+      end:Math.max(0,lines.length-1)
+    }];
+  }
+
+  const groups = [];
+
+  if(starts[0].lineIndex > 0){
+    groups.push({
+      label:"প্রশ্ন নম্বরের আগের অংশ",
+      start:0,
+      end:starts[0].lineIndex-1
+    });
+  }
+
+  starts.forEach((item,index)=>{
+    groups.push({
+      label:"প্রশ্ন "+item.number,
+      start:item.lineIndex,
+      end:index+1<starts.length
+        ? starts[index+1].lineIndex-1
+        : lines.length-1
+    });
+  });
+
+  return groups;
+}
+
+/* Original প্রশ্ন ও অপশন দেখায়; শুধু Missing শব্দ লাল করে */
+function renderQuestionGroup(group,data,missingPositions){
+
+  let html = "";
+  let globalPosition = 1;
+
+  for(let lineIndex=0; lineIndex<data.originalLines.length; lineIndex++){
+
+    const line = data.originalLines[lineIndex];
+    const words = line.split(/\s+/u).filter(Boolean);
+
+    if(lineIndex >= group.start && lineIndex <= group.end){
+
+      const renderedWords = words.map(word=>{
+        const position = globalPosition++;
+        if(missingPositions.has(position)){
+          return '<span class="missing-mark">'+escapeHTML(word)+'</span>';
+        }
+        return escapeHTML(word);
+      });
+
+      html += renderedWords.join(" ") + "\n";
+
+    }else{
+      globalPosition += words.length;
+    }
+  }
+
+  return html.trimEnd();
 }
 
 
@@ -383,79 +464,86 @@ function showReport(data){
 
   let html = `
     <div class="stats">
-      <div class="stat">
-        <strong>${data.originalCount}</strong>
-        Original Words
-      </div>
-
-      <div class="stat">
-        <strong>${data.typedCount}</strong>
-        Typed Words
-      </div>
-
-      <div class="stat">
-        <strong>${data.missing.length}</strong>
-        Missing
-      </div>
-
-      <div class="stat">
-        <strong>${data.extra.length}</strong>
-        Extra
-      </div>
+      <div class="stat"><strong>${data.originalCount}</strong>Original Words</div>
+      <div class="stat"><strong>${data.typedCount}</strong>Typed Words</div>
+      <div class="stat"><strong>${data.missing.length}</strong>Missing</div>
+      <div class="stat"><strong>${data.extra.length}</strong>Extra</div>
     </div>
   `;
 
   if(data.missing.length){
 
-    html += `
-      <h3 class="error">❌ Original থেকে বাদ পড়েছে</h3>
-    `;
+    html += `<h3 class="error">❌ Original থেকে বাদ পড়েছে</h3>`;
 
-    data.missing.forEach(item=>{
+    const missingPositions = new Set(
+      data.missing.map(item=>item.position)
+    );
+
+    const groups = buildQuestionGroups(data.originalLines || []);
+    let shownAnyGroup = false;
+
+    groups.forEach(group=>{
+
+      const groupMissing = data.missing.filter(item=>
+        item.lineIndex >= group.start &&
+        item.lineIndex <= group.end
+      );
+
+      if(!groupMissing.length) return;
+
+      shownAnyGroup = true;
+
+      const missingText = groupMissing
+        .map(item=>item.word)
+        .join(" ");
 
       html += `
         <div class="result-item">
-          <b>Original শব্দের অবস্থান: ${item.position}</b>
-          <p class="error">${escapeHTML(item.word)}</p>
+          <b class="question-label">${escapeHTML(group.label)} — Missing অংশ</b>
+          <div class="question-context">${
+            renderQuestionGroup(group,data,missingPositions)
+          }</div>
+          <p class="error"><b>শুধু বাদ পড়েছে:</b> ${escapeHTML(missingText)}</p>
         </div>
       `;
     });
+
+    if(!shownAnyGroup){
+      data.missing.forEach(item=>{
+        html += `
+          <div class="result-item">
+            <b>Original শব্দের অবস্থান: ${item.position}</b>
+            <p class="error">${escapeHTML(item.word)}</p>
+          </div>
+        `;
+      });
+    }
   }
 
   if(data.extra.length){
 
     const firstPosition = data.extra[0].position;
-
-    const extraSentence = data.extra
-      .map(item=>item.word)
-      .join(" ");
+    const extraSentence = data.extra.map(item=>item.word).join(" ");
 
     html += `
       <h3 class="error">➕ Typed Text-এ অতিরিক্ত আছে</h3>
-
       <div class="result-item">
-        <p class="error">
-          ${escapeHTML(firstPosition+". "+extraSentence)}
-        </p>
+        <p class="error">${escapeHTML(firstPosition+". "+extraSentence)}</p>
       </div>
     `;
   }
 
   if(!data.missing.length && !data.extra.length){
-
-    html += `
-      <h3 class="success">
-        ✓ দুটি লেখার শব্দ মিলে গেছে।
-      </h3>
-    `;
+    html += `<h3 class="success">✓ দুটি লেখার শব্দ মিলে গেছে।</h3>`;
   }
 
   html += `
     <p class="muted">
-      অবস্থান বলতে শব্দের ক্রমিক নম্বর বোঝানো হয়েছে;
-      এটি Word-এর প্রকৃত পৃষ্ঠা নম্বর নয়।
+      প্রশ্ন নম্বর পাওয়া গেলে Missing অংশগুলো সংশ্লিষ্ট প্রশ্নের সঙ্গে দেখানো হয়।
+      লাল রঙে চিহ্নিত শব্দগুলো Original থেকে বাদ পড়েছে।
+      Original-এ থাকা প্রশ্ন ও অপশনই দেখানো হয়; কোনো প্রশ্ন বা অপশন বানিয়ে যোগ করা হয় না।
+      অবস্থান শব্দের ক্রমিক নম্বর, Word-এর প্রকৃত পৃষ্ঠা নম্বর নয়।
       OCR-এর ভুল তুলনার ফলকে প্রভাবিত করতে পারে।
-      এই পদ্ধতি শব্দের ক্রম অনুযায়ী তুলনা করে।
     </p>
   `;
 
