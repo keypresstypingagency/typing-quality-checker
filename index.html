@@ -34,8 +34,52 @@ textarea{
  width:100%;min-height:350px;padding:14px;
  border:1px solid #ccd5e2;border-radius:8px;
  font-size:15px;line-height:1.8;resize:vertical;
- font-family:Arial,sans-serif
+ font-family:Arial,sans-serif;
+ background:rgba(255,255,255,.96);
+ position:relative;z-index:1
 }
+
+/* Compare চলার সময় লাল স্ক্যানিং অ্যানিমেশন */
+.typing-wrap{
+ position:relative;
+ overflow:hidden;
+ border-radius:8px
+}
+.scan-overlay{
+ display:none;
+ position:absolute;
+ inset:0;
+ z-index:2;
+ pointer-events:none;
+ overflow:hidden;
+ border-radius:8px
+}
+.typing-wrap.scanning .scan-overlay{
+ display:block
+}
+.scan-overlay::after{
+ content:"";
+ position:absolute;
+ left:0;
+ right:0;
+ top:0;
+ height:3px;
+ background:linear-gradient(
+  90deg,
+  transparent,
+  #ff2525,
+  #ff7777,
+  #ff2525,
+  transparent
+ );
+ box-shadow:0 0 12px 3px #ff252580;
+ animation:scanMove 1.4s linear infinite
+}
+@keyframes scanMove{
+ 0%{transform:translateY(0)}
+ 100%{transform:translateY(350px)}
+}
+
 button{
  background:#1765d1;color:white;border:0;
  padding:13px 22px;border-radius:8px;
@@ -120,10 +164,15 @@ Smart Document Verification System
 
 <div>
 <h3>⌨️ Typed Text</h3>
+
+<div class="typing-wrap" id="typingWrap">
 <textarea
  id="typedText"
  placeholder="এখানে আপনার টাইপ করা লেখা পেস্ট করুন..."
 ></textarea>
+<div class="scan-overlay"></div>
+</div>
+
 <p class="muted">
 এখানে সম্পূর্ণ টাইপ করা লেখা পেস্ট করুন।
 </p>
@@ -153,7 +202,6 @@ Compare Documents
 
 </main>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/diff/5.2.0/diff.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
 
 <script>
@@ -220,6 +268,8 @@ function setProgress(percent,message){
 
 }
 
+
+// ফাইল থেকে লেখা বের করা
 async function extractFile(file){
 
  const name=file.name.toLowerCase();
@@ -278,67 +328,213 @@ async function extractFile(file){
 }
 
 
-// Word token comparison
-function compareWords(original,typed){
+// দ্রুত তুলনার জন্য আলাদা Web Worker
+function compareInWorker(original,typed){
 
- const A=normalizeText(original).split(/\s+/u).filter(Boolean);
- const B=normalizeText(typed).split(/\s+/u).filter(Boolean);
+ return new Promise((resolve,reject)=>{
 
- if(!window.Diff || !Diff.diffArrays){
-  throw new Error("Comparison Library লোড হয়নি।");
- }
+  const workerCode=`
 
- const changes=Diff.diffArrays(A,B);
+   importScripts(
+    "https://cdnjs.cloudflare.com/ajax/libs/diff/5.2.0/diff.min.js"
+   );
 
- let missing=[];
- let extra=[];
+   self.onmessage=function(event){
 
- let originalPosition=0;
- let typedPosition=0;
+    try{
 
- changes.forEach(part=>{
+     const A=event.data.A;
+     const B=event.data.B;
 
-  const words=part.value||[];
+     let start=0;
 
-  if(part.removed){
+     // শুরুতে একই থাকা শব্দ বাদ
+     while(
+      start<A.length &&
+      start<B.length &&
+      A[start]===B[start]
+     ){
+      start++;
+     }
 
-   words.forEach(word=>{
-    missing.push({
-     word:word,
-     position:originalPosition+1
-    });
-    originalPosition++;
+     // শেষে একই থাকা শব্দ বাদ
+     let endA=A.length-1;
+     let endB=B.length-1;
+
+     while(
+      endA>=start &&
+      endB>=start &&
+      A[endA]===B[endB]
+     ){
+      endA--;
+      endB--;
+     }
+
+     const middleA=A.slice(start,endA+1);
+     const middleB=B.slice(start,endB+1);
+
+     let changes=[];
+
+     if(middleA.length===0){
+
+      changes=[
+       {value:middleB,added:true}
+      ];
+
+     }
+
+     else if(middleB.length===0){
+
+      changes=[
+       {value:middleA,removed:true}
+      ];
+
+     }
+
+     else{
+
+      changes=Diff.diffArrays(
+       middleA,
+       middleB,
+       {timeout:10000}
+      );
+
+     }
+
+     if(!changes){
+      throw new Error(
+       "এই লেখার তুলনা করতে বেশি সময় লাগছে। ছোট অংশে ভাগ করে চেষ্টা করুন।"
+      );
+     }
+
+     let missing=[];
+     let extra=[];
+
+     let originalPosition=start;
+     let typedPosition=start;
+
+     changes.forEach(part=>{
+
+      const words=part.value||[];
+
+      if(part.removed){
+
+       words.forEach(word=>{
+
+        missing.push({
+         word:word,
+         position:originalPosition+1
+        });
+
+        originalPosition++;
+
+       });
+
+      }
+
+      else if(part.added){
+
+       words.forEach(word=>{
+
+        extra.push({
+         word:word,
+         position:typedPosition+1
+        });
+
+        typedPosition++;
+
+       });
+
+      }
+
+      else{
+
+       originalPosition+=words.length;
+       typedPosition+=words.length;
+
+      }
+
+     });
+
+     self.postMessage({
+
+      success:true,
+      originalCount:A.length,
+      typedCount:B.length,
+      missing:missing,
+      extra:extra
+
+     });
+
+    }
+
+    catch(error){
+
+     self.postMessage({
+      success:false,
+      message:error.message||"তুলনা করতে সমস্যা হয়েছে।"
+     });
+
+    }
+
+   };
+
+  `;
+
+  let worker;
+  let workerURL;
+
+  try{
+
+   const blob=new Blob(
+    [workerCode],
+    {type:"application/javascript"}
+   );
+
+   workerURL=URL.createObjectURL(blob);
+   worker=new Worker(workerURL);
+
+   worker.onmessage=function(event){
+
+    worker.terminate();
+    URL.revokeObjectURL(workerURL);
+
+    if(event.data.success){
+     resolve(event.data);
+    }else{
+     reject(new Error(event.data.message));
+    }
+
+   };
+
+   worker.onerror=function(){
+
+    worker.terminate();
+    URL.revokeObjectURL(workerURL);
+
+    reject(
+     new Error("দ্রুত তুলনা চালু করা যায়নি। পেজটি Refresh করে আবার চেষ্টা করুন।")
+    );
+
+   };
+
+   worker.postMessage({
+    A:normalizeText(original).split(/\s+/u).filter(Boolean),
+    B:normalizeText(typed).split(/\s+/u).filter(Boolean)
    });
 
   }
 
-  else if(part.added){
+  catch(error){
 
-   words.forEach(word=>{
-    extra.push({
-     word:word,
-     position:typedPosition+1
-    });
-    typedPosition++;
-   });
+   if(worker) worker.terminate();
+   if(workerURL) URL.revokeObjectURL(workerURL);
 
-  }
-
-  else{
-
-   originalPosition+=words.length;
-   typedPosition+=words.length;
+   reject(error);
 
   }
 
  });
-
- return {
-  originalCount:A.length,
-  typedCount:B.length,
-  missing,
-  extra
- };
 
 }
 
@@ -443,6 +639,7 @@ async function startCompare(){
  const report=document.getElementById("report");
  const files=Array.from(fileInput.files);
  const typed=document.getElementById("typedText").value;
+ const typingWrap=document.getElementById("typingWrap");
 
  if(!files.length){
   alert("কমপক্ষে একটি Original ফাইল নির্বাচন করুন।");
@@ -462,7 +659,10 @@ async function startCompare(){
  button.disabled=true;
  button.textContent="Processing...";
 
+ typingWrap.classList.add("scanning");
+
  document.getElementById("progressArea").style.display="block";
+ report.innerHTML='<p class="muted">তুলনা চলছে...</p>';
 
  try{
 
@@ -488,9 +688,13 @@ async function startCompare(){
 
   }
 
-  setProgress(85,"লেখা তুলনা করা হচ্ছে...");
+  setProgress(85,"দ্রুত শব্দ তুলনা করা হচ্ছে...");
 
-  const result=compareWords(originalText,typed);
+  // Worker-এ তুলনা
+  const result=await compareInWorker(
+   originalText,
+   typed
+  );
 
   setProgress(100,"তুলনা সম্পন্ন হয়েছে।");
 
@@ -505,6 +709,8 @@ async function startCompare(){
   '</p>';
 
  }finally{
+
+  typingWrap.classList.remove("scanning");
 
   button.disabled=false;
   button.textContent="Compare Documents";
