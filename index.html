@@ -72,7 +72,21 @@ button:disabled{opacity:.5;cursor:not-allowed}
 <input type="file" id="originalFiles" multiple accept=".pdf,.docx,.txt,.jpg,.jpeg,.png,.webp">
 <p class="muted">একাধিক ফাইল নির্বাচন করতে পারবেন</p>
 </div>
+<div style="margin-top:20px">
 
+<h3>📝 অথবা Original Text লিখুন</h3>
+
+<textarea
+id="originalText"
+placeholder="এখানে Original Document-এর লেখা পেস্ট করুন..."
+style="min-height:220px"
+></textarea>
+
+<p class="muted">
+ফাইল আপলোড না করেও সরাসরি Original Text দিয়ে তুলনা করতে পারবেন।
+</p>
+
+</div>
 <div id="fileList" class="file-list"></div>
 </div>
 
@@ -1044,9 +1058,12 @@ const typed=document.getElementById("typedText").value;
 const typingWrap=document.getElementById("typingWrap");
 
 
-if(!files.length){
+const originalInput =
+document.getElementById("originalText").value;
 
-alert("কমপক্ষে একটি Original ফাইল নির্বাচন করুন।");
+if(!files.length&&!originalInput.trim()){
+
+alert("Original ফাইল আপলোড করুন অথবা Original Text লিখুন।");
 
 return;
 
