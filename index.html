@@ -14,6 +14,10 @@ main{max-width:1250px;margin:30px auto;padding:0 18px}
 .panel{background:white;padding:22px;border-radius:12px;margin-bottom:20px;border:1px solid #e1e7f0;box-shadow:0 3px 12px #172b4d08}
 .workspace{display:grid;grid-template-columns:1fr 1fr;gap:20px}
 .upload{border:2px dashed #aebfd6;padding:25px;border-radius:10px;background:#f9fbff;text-align:center}
+.original-manual{margin-top:16px}
+.original-manual textarea{min-height:180px;font-size:14px;background:#fff}
+.input-heading{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.optional-tag{font-size:11px;color:#1765d1;background:#eef4ff;padding:3px 8px;border-radius:20px}
 .typing-wrap{position:relative;border-radius:8px;overflow:hidden}
 textarea{width:100%;min-height:350px;padding:14px;border:1px solid #ccd5e2;border-radius:8px;font-size:15px;line-height:1.8;resize:vertical;font-family:Arial,sans-serif;background:white;display:block}
 .scan-overlay{display:none;position:absolute;inset:0;z-index:2;pointer-events:none;overflow:hidden;border-radius:8px}
@@ -48,7 +52,7 @@ button:disabled{opacity:.5;cursor:not-allowed}
 
 <main>
 <h1>Document Quality Checker</h1>
-<p class="muted">একাধিক Original ফাইল আপলোড করুন এবং পাশে Typed Text পেস্ট করুন।</p>
+<p class="muted">Original ফাইল আপলোড করুন অথবা সরাসরি Original লেখা পেস্ট করুন। এরপর Typed Text-এর সঙ্গে তুলনা করুন।</p>
 
 <section class="panel">
 <div class="workspace">
@@ -61,6 +65,18 @@ button:disabled{opacity:.5;cursor:not-allowed}
 <p class="muted">একাধিক ফাইল নির্বাচন করতে পারবেন</p>
 </div>
 <div id="fileList" class="file-list"></div>
+
+<div class="original-manual">
+  <h3 class="input-heading">
+    📝 অথবা Original লেখা Paste করুন
+    <span class="optional-tag">ঐচ্ছিক</span>
+  </h3>
+  <textarea
+    id="originalManualText"
+    placeholder="এখানে Original Document-এর লেখা টাইপ করুন বা Paste করুন...&#10;&#10;ফাইল আপলোড না করেও এই বক্সের লেখা দিয়ে তুলনা করতে পারবেন। ফাইল এবং লেখা—দুটিই দিলে দুটিকে একসঙ্গে Original হিসেবে ধরা হবে।"
+  ></textarea>
+  <p class="muted">ফাইল আপলোড না করেও এখানে Original লেখা দিয়ে তুলনা করা যাবে। চাইলে ফাইলের সঙ্গে অতিরিক্ত Original লেখাও যোগ করতে পারবেন।</p>
+</div>
 </div>
 
 <div>
@@ -561,12 +577,14 @@ async function startCompare(){
 
   const files = Array.from(fileInput.files);
 
+  const manualOriginal = document.getElementById("originalManualText").value;
+
   const typed = document.getElementById("typedText").value;
 
   const typingWrap = document.getElementById("typingWrap");
 
-  if(!files.length){
-    alert("কমপক্ষে একটি Original ফাইল নির্বাচন করুন।");
+  if(!files.length && !manualOriginal.trim()){
+    alert("Original ফাইল আপলোড করুন অথবা Original লেখা Paste করুন।");
     return;
   }
 
@@ -594,9 +612,12 @@ async function startCompare(){
 
   try{
 
-    let originalText = "";
+    // Original বক্সে সরাসরি লেখা থাকলে সেটিও Original হিসেবে যোগ হবে।
+    let originalText = manualOriginal.trim()
+      ? manualOriginal.trim() + "\\n"
+      : "";
 
-    // সব ফাইল থেকে লেখা সংগ্রহ
+    // নির্বাচিত সব ফাইল থেকে লেখা সংগ্রহ
     for(let i=0; i<files.length; i++){
 
       setProgress(
@@ -613,6 +634,10 @@ async function startCompare(){
       }
 
       originalText += "\n"+text+"\n";
+    }
+
+    if(!originalText.trim()){
+      throw new Error("Original ফাইল বা Original লেখার বক্স থেকে কোনো লেখা পাওয়া যায়নি।");
     }
 
     setProgress(85,"তুলনার প্রস্তুতি চলছে...");
