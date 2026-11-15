@@ -5,6 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Typing Quality Checker</title>
+
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#f3f6fb;color:#172b4d;font-family:Arial,sans-serif}
@@ -30,15 +31,22 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .stat{background:#eef4ff;padding:15px;text-align:center;border-radius:8px}
 .stat strong{display:block;font-size:23px;color:#1765d1}
 .result-item{border:1px solid #e1e7f0;padding:12px;margin:8px 0;border-radius:8px;background:white;overflow-wrap:anywhere}
-.error{color:#c0392b}.success{color:#087b58}
+.error{color:#c0392b}
+.success{color:#087b58}
 .question-context{margin-top:10px;padding:12px;background:#f8fafc;border:1px solid #e1e7f0;border-radius:8px;white-space:pre-wrap;line-height:1.9;font-size:14px}
 .missing-mark{color:#c0392b;background:#ffe5e5;border-bottom:2px solid #c0392b;font-weight:bold;padding:1px 2px;border-radius:3px}
 .question-label{display:block;margin-bottom:8px;color:#172b4d}
 .progress{background:#e8edf5;border-radius:20px;height:9px;overflow:hidden;margin:12px 0}
 .progress div{height:100%;width:0;background:#1765d1;transition:width .2s}
-@media(max-width:750px){.workspace{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}}
+.extra-info{background:#fff5f5;border:1px solid #f5d0d0;padding:10px;border-radius:7px;margin-top:10px}
+.extra-info p{margin:5px 0}
+@media(max-width:750px){
+.workspace{grid-template-columns:1fr}
+.stats{grid-template-columns:repeat(2,1fr)}
+}
 </style>
 </head>
+
 <body>
 
 <header>
@@ -47,28 +55,34 @@ button:disabled{opacity:.5;cursor:not-allowed}
 </header>
 
 <main>
+
 <h1>Document Quality Checker</h1>
 <p class="muted">একাধিক Original ফাইল আপলোড করুন এবং পাশে Typed Text পেস্ট করুন।</p>
 
 <section class="panel">
+
 <div class="workspace">
 
 <div>
 <h3>📁 Original Files</h3>
+
 <div class="upload">
 <p>PDF, DOCX, TXT, JPG, PNG নির্বাচন করুন</p>
 <input type="file" id="originalFiles" multiple accept=".pdf,.docx,.txt,.jpg,.jpeg,.png,.webp">
 <p class="muted">একাধিক ফাইল নির্বাচন করতে পারবেন</p>
 </div>
+
 <div id="fileList" class="file-list"></div>
 </div>
 
 <div>
 <h3>⌨️ Typed Text</h3>
+
 <div class="typing-wrap" id="typingWrap">
 <textarea id="typedText" placeholder="এখানে আপনার টাইপ করা লেখা পেস্ট করুন..."></textarea>
 <div class="scan-overlay"></div>
 </div>
+
 <p class="muted">এখানে সম্পূর্ণ টাইপ করা লেখা পেস্ট করুন।</p>
 </div>
 
@@ -80,14 +94,18 @@ button:disabled{opacity:.5;cursor:not-allowed}
 
 <div id="progressArea" style="display:none">
 <p id="statusText" class="muted">প্রস্তুতি চলছে...</p>
-<div class="progress"><div id="progressBar"></div></div>
+<div class="progress">
+<div id="progressBar"></div>
 </div>
+</div>
+
 </section>
 
 <section class="panel">
 <h3>📊 Comparison Report</h3>
 <div id="report" class="muted">এখনো কোনো তুলনা করা হয়নি।</div>
 </section>
+
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
@@ -100,106 +118,288 @@ const API_URL = "https://typing-quality-backend.onrender.com";
 const fileInput = document.getElementById("originalFiles");
 const compareButton = document.getElementById("compareButton");
 
-fileInput.addEventListener("change", showFiles);
-compareButton.addEventListener("click", startCompare);
+fileInput.addEventListener("change",showFiles);
+compareButton.addEventListener("click",startCompare);
+
+
+/* =========================================
+   FILE LIST
+   ========================================= */
 
 function showFiles(){
-  const list = document.getElementById("fileList");
-  list.innerHTML = "";
 
-  Array.from(fileInput.files).forEach((file,index)=>{
-    const item = document.createElement("div");
-    item.className = "file-item";
-    item.textContent =
-      `${index+1}. ${file.name} (${(file.size/1024/1024).toFixed(2)} MB)`;
-    list.appendChild(item);
-  });
+const list=document.getElementById("fileList");
+list.innerHTML="";
+
+Array.from(fileInput.files).forEach((file,index)=>{
+
+const item=document.createElement("div");
+
+item.className="file-item";
+
+item.textContent=
+`${index+1}. ${file.name} (${(file.size/1024/1024).toFixed(2)} MB)`;
+
+list.appendChild(item);
+
+});
+
 }
+
+
+/* =========================================
+   TEXT NORMALIZATION
+   ========================================= */
 
 function normalizeText(text){
-  return String(text)
-    .normalize("NFC")
-    .replace(/[\u200B-\u200D\uFEFF]/g,"")
-    .replace(/\r\n/g,"\n")
-    .replace(/\r/g,"\n")
-    .trim();
+
+return String(text)
+.normalize("NFC")
+.replace(/[\u200B-\u200D\uFEFF]/g,"")
+.replace(/\r\n/g,"\n")
+.replace(/\r/g,"\n")
+.trim();
+
 }
+
 
 function escapeHTML(value){
-  return String(value).replace(/[&<>"']/g,c=>({
-    "&":"&amp;",
-    "<":"&lt;",
-    ">":"&gt;",
-    '"':"&quot;",
-    "'":"&#39;"
-  })[c]);
+
+return String(value).replace(/[&<>"']/g,c=>({
+
+"&":"&amp;",
+"<":"&lt;",
+">":"&gt;",
+'"':"&quot;",
+"'":"&#39;"
+
+})[c]);
+
 }
 
+
 function setProgress(percent,message){
-  document.getElementById("progressBar").style.width =
-    percent+"%";
-  document.getElementById("statusText").textContent = message;
+
+document.getElementById("progressBar").style.width=percent+"%";
+
+document.getElementById("statusText").textContent=message;
+
 }
+
+
+/* =========================================
+   FILE EXTRACTION
+   ========================================= */
 
 async function extractFile(file){
 
-  const name = file.name.toLowerCase();
+const name=file.name.toLowerCase();
 
-  // Image OCR
-  if(/\.(jpg|jpeg|png|webp)$/i.test(name)){
+// Image OCR
 
-    if(!window.Tesseract){
-      throw new Error("ছবির OCR Library লোড হয়নি। ইন্টারনেট সংযোগ পরীক্ষা করুন।");
-    }
+if(/\.(jpg|jpeg|png|webp)$/i.test(name)){
 
-    const result = await Tesseract.recognize(
-      file,
-      "ben+eng",
-      {
-        logger:m=>{
-          if(m.status==="recognizing text"){
-            setProgress(
-              Math.round((m.progress||0)*100),
-              "ছবি থেকে লেখা পড়া হচ্ছে..."
-            );
-          }
-        }
-      }
-    );
+if(!window.Tesseract){
 
-    return result.data.text || "";
-  }
+throw new Error("ছবির OCR Library লোড হয়নি। ইন্টারনেট সংযোগ পরীক্ষা করুন।");
 
-  // PDF, DOCX, TXT extraction
-  const formData = new FormData();
-  formData.append("file",file);
+}
 
-  let response;
+const result=await Tesseract.recognize(
 
-  try{
-    response = await fetch(API_URL+"/extract",{
-      method:"POST",
-      body:formData
-    });
-  }catch(error){
-    throw new Error(
-      "Backend সার্ভারে সংযোগ করা যাচ্ছে না। কিছুক্ষণ পর আবার চেষ্টা করুন।"
-    );
-  }
+file,
+"ben+eng",
+{
+logger:m=>{
 
-  if(!response.ok){
-    let message = "ফাইল পড়তে সমস্যা হয়েছে।";
+if(m.status==="recognizing text"){
 
-    try{
-      const error = await response.json();
-      message = error.detail || message;
-    }catch(e){}
+setProgress(
+Math.round((m.progress||0)*100),
+"ছবি থেকে লেখা পড়া হচ্ছে..."
+);
 
-    throw new Error(file.name+": "+message);
-  }
+}
 
-  const result = await response.json();
-  return result.text || "";
+}
+
+}
+
+);
+
+return result.data.text||"";
+
+}
+
+
+// PDF, DOCX, TXT extraction
+
+const formData=new FormData();
+
+formData.append("file",file);
+
+let response;
+
+try{
+
+response=await fetch(API_URL+"/extract",{
+method:"POST",
+body:formData
+});
+
+}catch(error){
+
+throw new Error(
+"Backend সার্ভারে সংযোগ করা যাচ্ছে না। কিছুক্ষণ পর আবার চেষ্টা করুন।"
+);
+
+}
+
+if(!response.ok){
+
+let message="ফাইল পড়তে সমস্যা হয়েছে।";
+
+try{
+
+const error=await response.json();
+
+message=error.detail||message;
+
+}catch(e){}
+
+throw new Error(file.name+": "+message);
+
+}
+
+const result=await response.json();
+
+return result.text||"";
+
+}
+
+
+/* =========================================
+   QUESTION AND OPTION DETECTION
+   ========================================= */
+
+/*
+Typed Text-এর প্রতিটি শব্দের সঙ্গে
+প্রশ্ন নম্বর ও অপশন নম্বর সংরক্ষণ করা হয়।
+
+সমর্থিত প্রশ্ন ফরম্যাট:
+১০০. প্রশ্ন
+১০০) প্রশ্ন
+100. প্রশ্ন
+প্রশ্ন ১০০:
+
+সমর্থিত অপশন:
+ক) খ) গ) ঘ)
+ক. খ. গ. ঘ.
+(ক) (খ) (গ) (ঘ)
+A) B) C) D)
+A. B. C. D.
+*/
+
+function detectQuestionStart(line){
+
+const match=line.match(
+/^\s*(?:প্রশ্ন\s*)?([০-৯0-9]{1,4})\s*[.)।ঃ:]\s*/
+);
+
+return match?match[1]:null;
+
+}
+
+
+function detectOptionStart(word){
+
+const match=word.match(
+/^\(?([কখগঘঙচছজঝঞ]|[A-Ha-h])(?:\)|[.)ঃ:]|[-–])(?=$|[^\s])/u
+);
+
+if(!match)return null;
+
+return match[1];
+
+}
+
+
+/* =========================================
+   WORD DATA
+   ========================================= */
+
+function getWordData(text){
+
+const normalized=normalizeText(text);
+
+const lines=normalized.split("\n");
+
+const tokens=[];
+
+const lineStartPositions=[];
+
+let currentQuestion=null;
+
+let currentOption=null;
+
+lines.forEach((line,lineIndex)=>{
+
+lineStartPositions[lineIndex]=tokens.length+1;
+
+
+// নতুন প্রশ্ন শনাক্ত
+
+const detectedQuestion=detectQuestionStart(line);
+
+if(detectedQuestion){
+
+currentQuestion=detectedQuestion;
+
+currentOption=null;
+
+}
+
+
+// প্রতিটি লাইনের শব্দ
+
+const words=line.split(/\s+/u).filter(Boolean);
+
+words.forEach((word,wordInLine)=>{
+
+// অপশন শনাক্ত
+
+const detectedOption=detectOptionStart(word);
+
+if(detectedOption){
+
+currentOption=detectedOption;
+
+}
+
+tokens.push({
+
+word,
+lineIndex,
+wordInLine,
+position:tokens.length+1,
+
+// Extra শনাক্ত করার জন্য
+
+questionNumber:currentQuestion,
+optionNumber:currentOption
+
+});
+
+});
+
+});
+
+return {
+lines,
+tokens,
+lineStartPositions
+};
+
 }
 
 
@@ -207,250 +407,411 @@ async function extractFile(file){
    EXACT WORD COMPARISON - MYERS DIFF
    ========================================= */
 
-function getWordData(text){
-  const normalized = normalizeText(text);
-  const lines = normalized.split("\n");
-  const tokens = [];
-  const lineStartPositions = [];
-
-  lines.forEach((line,lineIndex)=>{
-    lineStartPositions[lineIndex] = tokens.length + 1;
-    line.split(/\s+/u).filter(Boolean).forEach((word,wordInLine)=>{
-      tokens.push({
-        word,
-        lineIndex,
-        wordInLine,
-        position:tokens.length+1
-      });
-    });
-  });
-
-  return {lines,tokens,lineStartPositions};
-}
-
-/*
-  Myers Diff: শব্দের ক্রম ধরে exact shortest-edit comparison.
-  Matching শব্দগুলো বাদ দিয়ে কেবল Missing ও Extra শনাক্ত করে।
-*/
 function compareWordsFast(original,typed){
 
-  const originalData = getWordData(original);
-  const typedData = getWordData(typed);
+const originalData=getWordData(original);
 
-  const A = originalData.tokens;
-  const B = typedData.tokens;
+const typedData=getWordData(typed);
 
-  const N = A.length;
-  const M = B.length;
-  const MAX = N + M;
+const A=originalData.tokens;
 
-  const missing = [];
-  const extra = [];
+const B=typedData.tokens;
 
-  if(MAX === 0){
-    return {
-      originalCount:0,
-      typedCount:0,
-      missing,
-      extra,
-      originalLines:originalData.lines,
-      lineStartPositions:originalData.lineStartPositions
-    };
-  }
+const N=A.length;
 
-  let V = new Map();
-  V.set(1,0);
-  const trace = [];
+const M=B.length;
 
-  let finalD = 0;
-  let finished = false;
+const MAX=N+M;
 
-  for(let d=0; d<=MAX; d++){
+const missing=[];
 
-    trace.push(new Map(V));
+const extra=[];
 
-    for(let k=-d; k<=d; k+=2){
 
-      const left = V.has(k-1) ? V.get(k-1) : -Infinity;
-      const right = V.has(k+1) ? V.get(k+1) : -Infinity;
+if(MAX===0){
 
-      let x;
+return {
 
-      if(k === -d || (k !== d && left < right)){
-        x = right;
-      }else{
-        x = left + 1;
-      }
+originalCount:0,
+typedCount:0,
+missing,
+extra,
 
-      if(!Number.isFinite(x)) x = 0;
+originalLines:originalData.lines,
+typedLines:typedData.lines,
 
-      let y = x-k;
+lineStartPositions:originalData.lineStartPositions
 
-      while(
-        x < N &&
-        y < M &&
-        A[x].word === B[y].word
-      ){
-        x++;
-        y++;
-      }
+};
 
-      V.set(k,x);
-
-      if(x >= N && y >= M){
-        finalD = d;
-        finished = true;
-        break;
-      }
-    }
-
-    if(finished) break;
-  }
-
-  if(!finished){
-    throw new Error("তুলনা সম্পন্ন করা যায়নি। আবার চেষ্টা করুন।");
-  }
-
-  let x = N;
-  let y = M;
-
-  for(let d=finalD; d>0; d--){
-
-    const previousV = trace[d];
-    const k = x-y;
-
-    const left = previousV.has(k-1) ? previousV.get(k-1) : -Infinity;
-    const right = previousV.has(k+1) ? previousV.get(k+1) : -Infinity;
-
-    let previousK;
-
-    if(k === -d || (k !== d && left < right)){
-      previousK = k+1;
-    }else{
-      previousK = k-1;
-    }
-
-    const previousX = previousV.has(previousK)
-      ? previousV.get(previousK)
-      : 0;
-
-    const previousY = previousX-previousK;
-
-    while(x > previousX && y > previousY){
-      x--;
-      y--;
-    }
-
-    if(x === previousX){
-      if(y > 0){
-        extra.push({
-          word:B[y-1].word,
-          position:y
-        });
-      }
-    }else{
-      if(x > 0){
-        missing.push({
-          word:A[x-1].word,
-          position:x,
-          lineIndex:A[x-1].lineIndex,
-          wordInLine:A[x-1].wordInLine
-        });
-      }
-    }
-
-    x = previousX;
-    y = previousY;
-  }
-
-  missing.reverse();
-  extra.reverse();
-
-  return {
-    originalCount:N,
-    typedCount:M,
-    missing,
-    extra,
-    originalLines:originalData.lines,
-    lineStartPositions:originalData.lineStartPositions
-  };
 }
 
-/* প্রশ্ন নম্বর ধরে Original-এর অংশগুলো ভাগ করে */
+
+let V=new Map();
+
+V.set(1,0);
+
+const trace=[];
+
+let finalD=0;
+
+let finished=false;
+
+
+for(let d=0;d<=MAX;d++){
+
+trace.push(new Map(V));
+
+for(let k=-d;k<=d;k+=2){
+
+const left=V.has(k-1)?V.get(k-1):-Infinity;
+
+const right=V.has(k+1)?V.get(k+1):-Infinity;
+
+let x;
+
+if(k===-d||(k!==d&&left<right)){
+
+x=right;
+
+}else{
+
+x=left+1;
+
+}
+
+if(!Number.isFinite(x))x=0;
+
+let y=x-k;
+
+
+while(
+
+x<N&&
+y<M&&
+A[x].word===B[y].word
+
+){
+
+x++;
+y++;
+
+}
+
+V.set(k,x);
+
+
+if(x>=N&&y>=M){
+
+finalD=d;
+
+finished=true;
+
+break;
+
+}
+
+}
+
+if(finished)break;
+
+}
+
+
+if(!finished){
+
+throw new Error("তুলনা সম্পন্ন করা যায়নি। আবার চেষ্টা করুন।");
+
+}
+
+
+let x=N;
+
+let y=M;
+
+
+for(let d=finalD;d>0;d--){
+
+const previousV=trace[d];
+
+const k=x-y;
+
+const left=previousV.has(k-1)?previousV.get(k-1):-Infinity;
+
+const right=previousV.has(k+1)?previousV.get(k+1):-Infinity;
+
+let previousK;
+
+
+if(k===-d||(k!==d&&left<right)){
+
+previousK=k+1;
+
+}else{
+
+previousK=k-1;
+
+}
+
+
+const previousX=previousV.has(previousK)
+?previousV.get(previousK)
+:0;
+
+const previousY=previousX-previousK;
+
+
+while(x>previousX&&y>previousY){
+
+x--;
+y--;
+
+}
+
+
+if(x===previousX){
+
+if(y>0){
+
+const item=B[y-1];
+
+extra.push({
+
+word:item.word,
+position:item.position,
+
+lineIndex:item.lineIndex,
+wordInLine:item.wordInLine,
+
+questionNumber:item.questionNumber,
+optionNumber:item.optionNumber
+
+});
+
+}
+
+}else{
+
+if(x>0){
+
+missing.push({
+
+word:A[x-1].word,
+position:x,
+lineIndex:A[x-1].lineIndex,
+wordInLine:A[x-1].wordInLine
+
+});
+
+}
+
+}
+
+
+x=previousX;
+
+y=previousY;
+
+}
+
+
+missing.reverse();
+
+extra.reverse();
+
+
+return {
+
+originalCount:N,
+typedCount:M,
+
+missing,
+extra,
+
+originalLines:originalData.lines,
+typedLines:typedData.lines,
+
+lineStartPositions:originalData.lineStartPositions
+
+};
+
+}
+
+
+/* =========================================
+   ORIGINAL QUESTION GROUPS
+   ========================================= */
+
 function buildQuestionGroups(lines){
 
-  const starts = [];
+const starts=[];
 
-  lines.forEach((line,index)=>{
-    const match = line.match(/^\s*([০-৯0-9]{1,4})\s*[.)।ঃ:]\s*/);
-    if(match){
-      starts.push({
-        lineIndex:index,
-        number:match[1]
-      });
-    }
-  });
+lines.forEach((line,index)=>{
 
-  if(!starts.length){
-    return [{
-      label:"Original অংশ",
-      start:0,
-      end:Math.max(0,lines.length-1)
-    }];
-  }
+const match=line.match(
+/^\s*(?:প্রশ্ন\s*)?([০-৯0-9]{1,4})\s*[.)।ঃ:]\s*/
+);
 
-  const groups = [];
+if(match){
 
-  if(starts[0].lineIndex > 0){
-    groups.push({
-      label:"প্রশ্ন নম্বরের আগের অংশ",
-      start:0,
-      end:starts[0].lineIndex-1
-    });
-  }
+starts.push({
 
-  starts.forEach((item,index)=>{
-    groups.push({
-      label:"প্রশ্ন "+item.number,
-      start:item.lineIndex,
-      end:index+1<starts.length
-        ? starts[index+1].lineIndex-1
-        : lines.length-1
-    });
-  });
+lineIndex:index,
+number:match[1]
 
-  return groups;
+});
+
 }
 
-/* Original প্রশ্ন ও অপশন দেখায়; শুধু Missing শব্দ লাল করে */
+});
+
+
+if(!starts.length){
+
+return [{
+
+label:"Original অংশ",
+start:0,
+end:Math.max(0,lines.length-1)
+
+}];
+
+}
+
+
+const groups=[];
+
+
+if(starts[0].lineIndex>0){
+
+groups.push({
+
+label:"প্রশ্ন নম্বরের আগের অংশ",
+start:0,
+end:starts[0].lineIndex-1
+
+});
+
+}
+
+
+starts.forEach((item,index)=>{
+
+groups.push({
+
+label:"প্রশ্ন "+item.number,
+
+start:item.lineIndex,
+
+end:index+1<starts.length
+?starts[index+1].lineIndex-1
+:lines.length-1
+
+});
+
+});
+
+
+return groups;
+
+}
+
+
+/* =========================================
+   ORIGINAL MISSING WORD HIGHLIGHT
+   ========================================= */
+
 function renderQuestionGroup(group,data,missingPositions){
 
-  let html = "";
-  let globalPosition = 1;
+let html="";
 
-  for(let lineIndex=0; lineIndex<data.originalLines.length; lineIndex++){
+let globalPosition=1;
 
-    const line = data.originalLines[lineIndex];
-    const words = line.split(/\s+/u).filter(Boolean);
 
-    if(lineIndex >= group.start && lineIndex <= group.end){
+for(let lineIndex=0;lineIndex<data.originalLines.length;lineIndex++){
 
-      const renderedWords = words.map(word=>{
-        const position = globalPosition++;
-        if(missingPositions.has(position)){
-          return '<span class="missing-mark">'+escapeHTML(word)+'</span>';
-        }
-        return escapeHTML(word);
-      });
+const line=data.originalLines[lineIndex];
 
-      html += renderedWords.join(" ") + "\n";
+const words=line.split(/\s+/u).filter(Boolean);
 
-    }else{
-      globalPosition += words.length;
-    }
-  }
 
-  return html.trimEnd();
+if(lineIndex>=group.start&&lineIndex<=group.end){
+
+const renderedWords=words.map(word=>{
+
+const position=globalPosition++;
+
+if(missingPositions.has(position)){
+
+return '<span class="missing-mark">'+
+escapeHTML(word)+
+'</span>';
+
+}
+
+return escapeHTML(word);
+
+});
+
+html+=renderedWords.join(" ")+"\n";
+
+}else{
+
+globalPosition+=words.length;
+
+}
+
+}
+
+
+return html.trimEnd();
+
+}
+
+
+/* =========================================
+   EXTRA WORD GROUPING
+   ========================================= */
+
+/*
+একই প্রশ্ন ও অপশনের Extra শব্দগুলো
+একসঙ্গে দেখাবে।
+*/
+
+function groupExtraWords(extra){
+
+const groups=new Map();
+
+
+extra.forEach(item=>{
+
+const question=item.questionNumber||null;
+
+const option=item.optionNumber||null;
+
+const key=(question||"unknown")+"|"+(option||"unknown");
+
+
+if(!groups.has(key)){
+
+groups.set(key,{
+
+question,
+option,
+items:[]
+
+});
+
+}
+
+
+groups.get(key).items.push(item);
+
+});
+
+
+return Array.from(groups.values());
+
 }
 
 
@@ -460,94 +821,244 @@ function renderQuestionGroup(group,data,missingPositions){
 
 function showReport(data){
 
-  const report = document.getElementById("report");
+const report=document.getElementById("report");
 
-  let html = `
-    <div class="stats">
-      <div class="stat"><strong>${data.originalCount}</strong>Original Words</div>
-      <div class="stat"><strong>${data.typedCount}</strong>Typed Words</div>
-      <div class="stat"><strong>${data.missing.length}</strong>Missing</div>
-      <div class="stat"><strong>${data.extra.length}</strong>Extra</div>
-    </div>
-  `;
 
-  if(data.missing.length){
+let html=`
 
-    html += `<h3 class="error">❌ Original থেকে বাদ পড়েছে</h3>`;
+<div class="stats">
 
-    const missingPositions = new Set(
-      data.missing.map(item=>item.position)
-    );
+<div class="stat">
+<strong>${data.originalCount}</strong>
+Original Words
+</div>
 
-    const groups = buildQuestionGroups(data.originalLines || []);
-    let shownAnyGroup = false;
+<div class="stat">
+<strong>${data.typedCount}</strong>
+Typed Words
+</div>
 
-    groups.forEach(group=>{
+<div class="stat">
+<strong>${data.missing.length}</strong>
+Missing
+</div>
 
-      const groupMissing = data.missing.filter(item=>
-        item.lineIndex >= group.start &&
-        item.lineIndex <= group.end
-      );
+<div class="stat">
+<strong>${data.extra.length}</strong>
+Extra
+</div>
 
-      if(!groupMissing.length) return;
+</div>
 
-      shownAnyGroup = true;
+`;
 
-      const missingText = groupMissing
-        .map(item=>item.word)
-        .join(" ");
 
-      html += `
-        <div class="result-item">
-          <b class="question-label">${escapeHTML(group.label)} — Missing অংশ</b>
-          <div class="question-context">${
-            renderQuestionGroup(group,data,missingPositions)
-          }</div>
-          <p class="error"><b>শুধু বাদ পড়েছে:</b> ${escapeHTML(missingText)}</p>
-        </div>
-      `;
-    });
+/* MISSING REPORT */
 
-    if(!shownAnyGroup){
-      data.missing.forEach(item=>{
-        html += `
-          <div class="result-item">
-            <b>Original শব্দের অবস্থান: ${item.position}</b>
-            <p class="error">${escapeHTML(item.word)}</p>
-          </div>
-        `;
-      });
-    }
-  }
+if(data.missing.length){
 
-  if(data.extra.length){
+html+=`<h3 class="error">❌ Original থেকে বাদ পড়েছে</h3>`;
 
-    const firstPosition = data.extra[0].position;
-    const extraSentence = data.extra.map(item=>item.word).join(" ");
 
-    html += `
-      <h3 class="error">➕ Typed Text-এ অতিরিক্ত আছে</h3>
-      <div class="result-item">
-        <p class="error">${escapeHTML(firstPosition+". "+extraSentence)}</p>
-      </div>
-    `;
-  }
+const missingPositions=new Set(
 
-  if(!data.missing.length && !data.extra.length){
-    html += `<h3 class="success">✓ দুটি লেখার শব্দ মিলে গেছে।</h3>`;
-  }
+data.missing.map(item=>item.position)
 
-  html += `
-    <p class="muted">
-      প্রশ্ন নম্বর পাওয়া গেলে Missing অংশগুলো সংশ্লিষ্ট প্রশ্নের সঙ্গে দেখানো হয়।
-      লাল রঙে চিহ্নিত শব্দগুলো Original থেকে বাদ পড়েছে।
-      Original-এ থাকা প্রশ্ন ও অপশনই দেখানো হয়; কোনো প্রশ্ন বা অপশন বানিয়ে যোগ করা হয় না।
-      অবস্থান শব্দের ক্রমিক নম্বর, Word-এর প্রকৃত পৃষ্ঠা নম্বর নয়।
-      OCR-এর ভুল তুলনার ফলকে প্রভাবিত করতে পারে।
-    </p>
-  `;
+);
 
-  report.innerHTML = html;
+
+const groups=buildQuestionGroups(data.originalLines||[]);
+
+let shownAnyGroup=false;
+
+
+groups.forEach(group=>{
+
+const groupMissing=data.missing.filter(item=>
+
+item.lineIndex>=group.start&&
+item.lineIndex<=group.end
+
+);
+
+
+if(!groupMissing.length)return;
+
+shownAnyGroup=true;
+
+
+const missingText=groupMissing
+.map(item=>item.word)
+.join(" ");
+
+
+html+=`
+
+<div class="result-item">
+
+<b class="question-label">
+${escapeHTML(group.label)} — Missing অংশ
+</b>
+
+<div class="question-context">
+
+${renderQuestionGroup(group,data,missingPositions)}
+
+</div>
+
+<p class="error">
+<b>শুধু বাদ পড়েছে:</b>
+${escapeHTML(missingText)}
+</p>
+
+</div>
+
+`;
+
+});
+
+
+if(!shownAnyGroup){
+
+data.missing.forEach(item=>{
+
+html+=`
+
+<div class="result-item">
+
+<b>Original শব্দের অবস্থান: ${item.position}</b>
+
+<p class="error">${escapeHTML(item.word)}</p>
+
+</div>
+
+`;
+
+});
+
+}
+
+}
+
+
+/* =========================================
+   EXTRA REPORT WITH QUESTION AND OPTION
+   ========================================= */
+
+if(data.extra.length){
+
+html+=`
+
+<h3 class="error">
+➕ Typed Text-এ অতিরিক্ত আছে
+</h3>
+
+`;
+
+
+const extraGroups=groupExtraWords(data.extra);
+
+
+extraGroups.forEach(group=>{
+
+const extraSentence=group.items
+.map(item=>item.word)
+.join(" ");
+
+
+const positions=group.items
+.map(item=>item.position)
+.join(", ");
+
+
+const questionText=group.question
+?escapeHTML(group.question)
+:"শনাক্ত করা যায়নি";
+
+
+const optionText=group.option
+?escapeHTML(group.option)
+:"শনাক্ত করা যায়নি";
+
+
+html+=`
+
+<div class="result-item">
+
+<div class="extra-info">
+
+<p>
+<b>📌 প্রশ্ন নম্বর:</b>
+${questionText}
+</p>
+
+<p>
+<b>📝 অপশন:</b>
+${optionText}
+</p>
+
+</div>
+
+<p class="error">
+
+<b>অতিরিক্ত শব্দ:</b>
+
+${escapeHTML(extraSentence)}
+
+</p>
+
+<p class="muted">
+
+<b>Typed Text-এ শব্দের অবস্থান:</b>
+${positions}
+
+</p>
+
+</div>
+
+`;
+
+});
+
+}
+
+
+/* ALL MATCHED */
+
+if(!data.missing.length&&!data.extra.length){
+
+html+=`
+
+<h3 class="success">
+✓ দুটি লেখার শব্দ মিলে গেছে।
+</h3>
+
+`;
+
+}
+
+
+/* FOOTNOTE */
+
+html+=`
+
+<p class="muted">
+
+প্রশ্ন নম্বর ও অপশন Typed Text-এর বিন্যাস অনুযায়ী শনাক্ত করা হয়।
+প্রশ্ন বা অপশন শনাক্ত করা না গেলে শনাক্ত করা যায়নি দেখানো হবে।
+একই প্রশ্ন ও অপশনের অতিরিক্ত শব্দ একসঙ্গে দেখানো হয়।
+লাল রঙে চিহ্নিত শব্দগুলো Original থেকে বাদ পড়েছে।
+Original-এ থাকা প্রশ্ন ও অপশনই দেখানো হয়; কোনো প্রশ্ন বা অপশন বানিয়ে যোগ করা হয় না।
+অবস্থান বলতে শব্দের ক্রমিক নম্বর বোঝানো হয়েছে, Word-এর প্রকৃত পৃষ্ঠা নম্বর নয়।
+OCR-এর ভুল তুলনার ফলকে প্রভাবিত করতে পারে।
+
+</p>
+
+`;
+
+
+report.innerHTML=html;
+
 }
 
 
@@ -557,98 +1068,145 @@ function showReport(data){
 
 async function startCompare(){
 
-  const report = document.getElementById("report");
+const report=document.getElementById("report");
 
-  const files = Array.from(fileInput.files);
+const files=Array.from(fileInput.files);
 
-  const typed = document.getElementById("typedText").value;
+const typed=document.getElementById("typedText").value;
 
-  const typingWrap = document.getElementById("typingWrap");
+const typingWrap=document.getElementById("typingWrap");
 
-  if(!files.length){
-    alert("কমপক্ষে একটি Original ফাইল নির্বাচন করুন।");
-    return;
-  }
 
-  if(!typed.trim()){
-    alert("Typed Text বক্সে লেখা পেস্ট করুন।");
-    return;
-  }
+if(!files.length){
 
-  if(files.length > 50){
-    alert("একবারে সর্বোচ্চ ৫০টি ফাইল নির্বাচন করুন।");
-    return;
-  }
+alert("কমপক্ষে একটি Original ফাইল নির্বাচন করুন।");
 
-  compareButton.disabled = true;
-  compareButton.textContent = "Processing...";
+return;
 
-  typingWrap.classList.add("scanning");
-
-  document.getElementById("progressArea").style.display = "block";
-
-  document.getElementById("progressBar").style.width = "0%";
-
-  report.innerHTML =
-    '<p class="muted">তুলনা চলছে...</p>';
-
-  try{
-
-    let originalText = "";
-
-    // সব ফাইল থেকে লেখা সংগ্রহ
-    for(let i=0; i<files.length; i++){
-
-      setProgress(
-        Math.round((i/files.length)*80),
-        `ফাইল পড়া হচ্ছে: ${files[i].name} (${i+1}/${files.length})`
-      );
-
-      const text = await extractFile(files[i]);
-
-      if(!text.trim()){
-        throw new Error(
-          files[i].name+" থেকে কোনো লেখা পাওয়া যায়নি।"
-        );
-      }
-
-      originalText += "\n"+text+"\n";
-    }
-
-    setProgress(85,"তুলনার প্রস্তুতি চলছে...");
-
-    await new Promise(resolve=>
-      requestAnimationFrame(()=>
-        requestAnimationFrame(resolve)
-      )
-    );
-
-    setProgress(90,"Myers Diff দিয়ে শব্দ তুলনা করা হচ্ছে...");
-
-    const result = compareWordsFast(originalText,typed);
-
-    setProgress(100,"তুলনা সম্পন্ন হয়েছে।");
-
-    showReport(result);
-
-  }catch(error){
-
-    console.error(error);
-
-    report.innerHTML =
-      '<p class="error">'+
-      escapeHTML(error.message || "অজানা সমস্যা হয়েছে।")+
-      '</p>';
-
-  }finally{
-
-    typingWrap.classList.remove("scanning");
-
-    compareButton.disabled = false;
-
-    compareButton.textContent = "Compare Documents";
-  }
 }
+
+
+if(!typed.trim()){
+
+alert("Typed Text বক্সে লেখা পেস্ট করুন।");
+
+return;
+
+}
+
+
+if(files.length>50){
+
+alert("একবারে সর্বোচ্চ ৫০টি ফাইল নির্বাচন করুন।");
+
+return;
+
+}
+
+
+compareButton.disabled=true;
+
+compareButton.textContent="Processing...";
+
+typingWrap.classList.add("scanning");
+
+
+document.getElementById("progressArea").style.display="block";
+
+document.getElementById("progressBar").style.width="0%";
+
+
+report.innerHTML=
+'<p class="muted">তুলনা চলছে...</p>';
+
+
+try{
+
+
+let originalText="";
+
+
+// সব ফাইল থেকে লেখা সংগ্রহ
+
+for(let i=0;i<files.length;i++){
+
+setProgress(
+
+Math.round((i/files.length)*80),
+
+`ফাইল পড়া হচ্ছে: ${files[i].name} (${i+1}/${files.length})`
+
+);
+
+
+const text=await extractFile(files[i]);
+
+
+if(!text.trim()){
+
+throw new Error(
+files[i].name+" থেকে কোনো লেখা পাওয়া যায়নি।"
+);
+
+}
+
+
+originalText+="\n"+text+"\n";
+
+}
+
+
+setProgress(85,"তুলনার প্রস্তুতি চলছে...");
+
+
+await new Promise(resolve=>
+
+requestAnimationFrame(()=>
+
+requestAnimationFrame(resolve)
+
+)
+
+);
+
+
+setProgress(90,"Myers Diff দিয়ে শব্দ তুলনা করা হচ্ছে...");
+
+
+const result=compareWordsFast(originalText,typed);
+
+
+setProgress(100,"তুলনা সম্পন্ন হয়েছে।");
+
+
+showReport(result);
+
+
+}catch(error){
+
+console.error(error);
+
+
+report.innerHTML=
+
+'<p class="error">'+
+escapeHTML(error.message||"অজানা সমস্যা হয়েছে।")+
+'</p>';
+
+
+}finally{
+
+
+typingWrap.classList.remove("scanning");
+
+compareButton.disabled=false;
+
+compareButton.textContent="Compare Documents";
+
+}
+
+}
+
 </script>
 
 </body>
