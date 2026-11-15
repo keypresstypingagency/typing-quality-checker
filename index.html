@@ -8,39 +8,241 @@
 
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#f3f6fb;color:#172b4d;font-family:Arial,sans-serif}
-header{background:#172b4d;color:white;padding:22px 5%}
+
+body{
+margin:0;
+background:#f3f6fb;
+color:#172b4d;
+font-family:Arial,sans-serif
+}
+
+header{
+background:#172b4d;
+color:white;
+padding:22px 5%
+}
+
 header h2{margin:0}
-main{max-width:1250px;margin:30px auto;padding:0 18px}
-.panel{background:white;padding:22px;border-radius:12px;margin-bottom:20px;border:1px solid #e1e7f0;box-shadow:0 3px 12px #172b4d08}
-.workspace{display:grid;grid-template-columns:1fr 1fr;gap:20px}
-.upload{border:2px dashed #aebfd6;padding:25px;border-radius:10px;background:#f9fbff;text-align:center}
-.typing-wrap{position:relative;border-radius:8px;overflow:hidden}
-textarea{width:100%;min-height:350px;padding:14px;border:1px solid #ccd5e2;border-radius:8px;font-size:15px;line-height:1.8;resize:vertical;font-family:Arial,sans-serif;background:white;display:block}
-.scan-overlay{display:none;position:absolute;inset:0;z-index:2;pointer-events:none;overflow:hidden;border-radius:8px}
-.typing-wrap.scanning .scan-overlay{display:block}
-.scan-overlay::after{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,transparent,#ff2525,#ff7777,#ff2525,transparent);box-shadow:0 0 12px 3px #ff252580;animation:scanMove 1.5s linear infinite}
-@keyframes scanMove{from{top:0}to{top:100%}}
-button{background:#1765d1;color:white;border:0;padding:13px 22px;border-radius:8px;cursor:pointer;font-size:15px;font-weight:bold}
-button:disabled{opacity:.5;cursor:not-allowed}
-.center{text-align:center;margin-top:20px}
-.muted{color:#667085;font-size:13px}
-.file-list{text-align:left;margin-top:15px}
-.file-item{background:white;border:1px solid #e1e7f0;padding:9px;margin:6px 0;border-radius:7px;overflow-wrap:anywhere}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0}
-.stat{background:#eef4ff;padding:15px;text-align:center;border-radius:8px}
-.stat strong{display:block;font-size:23px;color:#1765d1}
-.result-item{border:1px solid #e1e7f0;padding:12px;margin:8px 0;border-radius:8px;background:white;overflow-wrap:anywhere}
+
+main{
+max-width:1250px;
+margin:30px auto;
+padding:0 18px
+}
+
+.panel{
+background:white;
+padding:22px;
+border-radius:12px;
+margin-bottom:20px;
+border:1px solid #e1e7f0;
+box-shadow:0 3px 12px #172b4d08
+}
+
+.workspace{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:20px
+}
+
+.upload{
+border:2px dashed #aebfd6;
+padding:25px;
+border-radius:10px;
+background:#f9fbff;
+text-align:center
+}
+
+.typing-wrap{
+position:relative;
+border-radius:8px;
+overflow:hidden
+}
+
+textarea{
+width:100%;
+min-height:350px;
+padding:14px;
+border:1px solid #ccd5e2;
+border-radius:8px;
+font-size:15px;
+line-height:1.8;
+resize:vertical;
+font-family:Arial,sans-serif;
+background:white;
+display:block
+}
+
+#originalText{
+min-height:220px
+}
+
+.scan-overlay{
+display:none;
+position:absolute;
+inset:0;
+z-index:2;
+pointer-events:none;
+overflow:hidden;
+border-radius:8px
+}
+
+.typing-wrap.scanning .scan-overlay{
+display:block
+}
+
+.scan-overlay::after{
+content:"";
+position:absolute;
+left:0;
+right:0;
+top:0;
+height:3px;
+background:linear-gradient(
+90deg,transparent,#ff2525,#ff7777,#ff2525,transparent
+);
+box-shadow:0 0 12px 3px #ff252580;
+animation:scanMove 1.5s linear infinite
+}
+
+@keyframes scanMove{
+from{top:0}
+to{top:100%}
+}
+
+button{
+background:#1765d1;
+color:white;
+border:0;
+padding:13px 22px;
+border-radius:8px;
+cursor:pointer;
+font-size:15px;
+font-weight:bold
+}
+
+button:disabled{
+opacity:.5;
+cursor:not-allowed
+}
+
+.center{
+text-align:center;
+margin-top:20px
+}
+
+.muted{
+color:#667085;
+font-size:13px
+}
+
+.file-list{
+text-align:left;
+margin-top:15px
+}
+
+.file-item{
+background:white;
+border:1px solid #e1e7f0;
+padding:9px;
+margin:6px 0;
+border-radius:7px;
+overflow-wrap:anywhere
+}
+
+.stats{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:10px;
+margin:18px 0
+}
+
+.stat{
+background:#eef4ff;
+padding:15px;
+text-align:center;
+border-radius:8px
+}
+
+.stat strong{
+display:block;
+font-size:23px;
+color:#1765d1
+}
+
+.result-item{
+border:1px solid #e1e7f0;
+padding:12px;
+margin:8px 0;
+border-radius:8px;
+background:white;
+overflow-wrap:anywhere
+}
+
 .error{color:#c0392b}
 .success{color:#087b58}
-.question-context{margin-top:10px;padding:12px;background:#f8fafc;border:1px solid #e1e7f0;border-radius:8px;white-space:pre-wrap;line-height:1.9;font-size:14px}
-.missing-mark{color:#c0392b;background:#ffe5e5;border-bottom:2px solid #c0392b;font-weight:bold;padding:1px 2px;border-radius:3px}
-.question-label{display:block;margin-bottom:8px;color:#172b4d}
-.progress{background:#e8edf5;border-radius:20px;height:9px;overflow:hidden;margin:12px 0}
-.progress div{height:100%;width:0;background:#1765d1;transition:width .2s}
-.extra-info{background:#fff5f5;border:1px solid #f5d0d0;padding:10px;border-radius:7px;margin-top:10px}
+
+.question-context{
+margin-top:10px;
+padding:12px;
+background:#f8fafc;
+border:1px solid #e1e7f0;
+border-radius:8px;
+white-space:pre-wrap;
+line-height:1.9;
+font-size:14px
+}
+
+.missing-mark{
+color:#c0392b;
+background:#ffe5e5;
+border-bottom:2px solid #c0392b;
+font-weight:bold;
+padding:1px 2px;
+border-radius:3px
+}
+
+.question-label{
+display:block;
+margin-bottom:8px;
+color:#172b4d
+}
+
+.progress{
+background:#e8edf5;
+border-radius:20px;
+height:9px;
+overflow:hidden;
+margin:12px 0
+}
+
+.progress div{
+height:100%;
+width:0;
+background:#1765d1;
+transition:width .2s
+}
+
+.extra-info{
+background:#fff5f5;
+border:1px solid #f5d0d0;
+padding:10px;
+border-radius:7px;
+margin-top:10px
+}
+
 .extra-info p{margin:5px 0}
-.extra-line{margin:9px 0;padding:9px 11px;background:#fffafa;border-left:3px solid #c0392b;border-radius:4px;line-height:1.8;overflow-wrap:anywhere}
+
+.extra-line{
+margin:9px 0;
+padding:9px 11px;
+background:#fffafa;
+border-left:3px solid #c0392b;
+border-radius:4px;
+line-height:1.8;
+overflow-wrap:anywhere
+}
+
 @media(max-width:750px){
 .workspace{grid-template-columns:1fr}
 .stats{grid-template-columns:repeat(2,1fr)}
@@ -52,73 +254,125 @@ button:disabled{opacity:.5;cursor:not-allowed}
 
 <header>
 <h2>✦ Typing Quality Checker</h2>
-<p style="color:#dce7f7;margin-bottom:0">Smart Document Verification System</p>
+<p style="color:#dce7f7;margin-bottom:0">
+Smart Document Verification System
+</p>
 </header>
 
 <main>
 
 <h1>Document Quality Checker</h1>
-<p class="muted">একাধিক Original ফাইল আপলোড করুন এবং পাশে Typed Text পেস্ট করুন।</p>
+
+<p class="muted">
+ফাইল আপলোড করুন অথবা Original Text লিখুন। পাশে Typed Text দিয়ে তুলনা করুন।
+</p>
 
 <section class="panel">
 
 <div class="workspace">
 
+<!-- ORIGINAL SECTION -->
+
 <div>
+
 <h3>📁 Original Files</h3>
 
 <div class="upload">
+
 <p>PDF, DOCX, TXT, JPG, PNG নির্বাচন করুন</p>
-<input type="file" id="originalFiles" multiple accept=".pdf,.docx,.txt,.jpg,.jpeg,.png,.webp">
-<p class="muted">একাধিক ফাইল নির্বাচন করতে পারবেন</p>
+
+<input
+type="file"
+id="originalFiles"
+multiple
+accept=".pdf,.docx,.txt,.jpg,.jpeg,.png,.webp"
+>
+
+<p class="muted">
+একাধিক ফাইল নির্বাচন করতে পারবেন
+</p>
+
 </div>
+
+<div id="fileList" class="file-list"></div>
+
+<!-- DIRECT ORIGINAL TEXT -->
+
 <div style="margin-top:20px">
 
-<h3>📝 অথবা Original Text লিখুন</h3>
+<h3>📝 Original Text</h3>
 
 <textarea
 id="originalText"
 placeholder="এখানে Original Document-এর লেখা পেস্ট করুন..."
-style="min-height:220px"
 ></textarea>
 
 <p class="muted">
-ফাইল আপলোড না করেও সরাসরি Original Text দিয়ে তুলনা করতে পারবেন।
+ফাইল ছাড়াই সরাসরি Original Text দিয়ে তুলনা করতে পারবেন।
+ফাইল ও Text একসঙ্গেও ব্যবহার করা যাবে।
 </p>
 
 </div>
-<div id="fileList" class="file-list"></div>
+
 </div>
 
+<!-- TYPED TEXT SECTION -->
+
 <div>
+
 <h3>⌨️ Typed Text</h3>
 
 <div class="typing-wrap" id="typingWrap">
-<textarea id="typedText" placeholder="এখানে আপনার টাইপ করা লেখা পেস্ট করুন..."></textarea>
+
+<textarea
+id="typedText"
+placeholder="এখানে আপনার টাইপ করা লেখা পেস্ট করুন..."
+></textarea>
+
 <div class="scan-overlay"></div>
+
 </div>
 
-<p class="muted">এখানে সম্পূর্ণ টাইপ করা লেখা পেস্ট করুন।</p>
+<p class="muted">
+এখানে সম্পূর্ণ টাইপ করা লেখা পেস্ট করুন।
+</p>
+
 </div>
 
 </div>
 
 <div class="center">
-<button id="compareButton" type="button">Compare Documents</button>
+
+<button id="compareButton" type="button">
+Compare Documents
+</button>
+
 </div>
 
 <div id="progressArea" style="display:none">
-<p id="statusText" class="muted">প্রস্তুতি চলছে...</p>
+
+<p id="statusText" class="muted">
+প্রস্তুতি চলছে...
+</p>
+
 <div class="progress">
 <div id="progressBar"></div>
 </div>
+
 </div>
 
 </section>
 
+<!-- REPORT -->
+
 <section class="panel">
+
 <h3>📊 Comparison Report</h3>
-<div id="report" class="muted">এখনো কোনো তুলনা করা হয়নি।</div>
+
+<div id="report" class="muted">
+এখনো কোনো তুলনা করা হয়নি।
+</div>
+
 </section>
 
 </main>
@@ -128,22 +382,28 @@ style="min-height:220px"
 <script>
 "use strict";
 
-const API_URL = "https://typing-quality-backend.onrender.com";
+const API_URL =
+"https://typing-quality-backend.onrender.com";
 
-const fileInput = document.getElementById("originalFiles");
-const compareButton = document.getElementById("compareButton");
+const fileInput =
+document.getElementById("originalFiles");
+
+const compareButton =
+document.getElementById("compareButton");
 
 fileInput.addEventListener("change",showFiles);
+
 compareButton.addEventListener("click",startCompare);
 
 
 /* =========================================
    FILE LIST
-   ========================================= */
+========================================= */
 
 function showFiles(){
 
 const list=document.getElementById("fileList");
+
 list.innerHTML="";
 
 Array.from(fileInput.files).forEach((file,index)=>{
@@ -164,7 +424,7 @@ list.appendChild(item);
 
 /* =========================================
    TEXT NORMALIZATION
-   ========================================= */
+========================================= */
 
 function normalizeText(text){
 
@@ -195,35 +455,42 @@ return String(value).replace(/[&<>"']/g,c=>({
 
 function setProgress(percent,message){
 
-document.getElementById("progressBar").style.width=percent+"%";
+document.getElementById("progressBar").style.width=
+percent+"%";
 
-document.getElementById("statusText").textContent=message;
+document.getElementById("statusText").textContent=
+message;
 
 }
 
 
 /* =========================================
    FILE EXTRACTION
-   ========================================= */
+========================================= */
 
 async function extractFile(file){
 
 const name=file.name.toLowerCase();
 
-// Image OCR
+
+// IMAGE OCR
 
 if(/\.(jpg|jpeg|png|webp)$/i.test(name)){
 
 if(!window.Tesseract){
 
-throw new Error("ছবির OCR Library লোড হয়নি। ইন্টারনেট সংযোগ পরীক্ষা করুন।");
+throw new Error(
+"ছবির OCR Library লোড হয়নি। ইন্টারনেট সংযোগ পরীক্ষা করুন।"
+);
 
 }
 
 const result=await Tesseract.recognize(
 
 file,
+
 "ben+eng",
+
 {
 logger:m=>{
 
@@ -247,7 +514,7 @@ return result.data.text||"";
 }
 
 
-// PDF, DOCX, TXT extraction
+// PDF, DOCX, TXT
 
 const formData=new FormData();
 
@@ -258,8 +525,11 @@ let response;
 try{
 
 response=await fetch(API_URL+"/extract",{
+
 method:"POST",
+
 body:formData
+
 });
 
 }catch(error){
@@ -269,6 +539,7 @@ throw new Error(
 );
 
 }
+
 
 if(!response.ok){
 
@@ -286,6 +557,7 @@ throw new Error(file.name+": "+message);
 
 }
 
+
 const result=await response.json();
 
 return result.text||"";
@@ -295,7 +567,7 @@ return result.text||"";
 
 /* =========================================
    QUESTION AND OPTION DETECTION
-   ========================================= */
+========================================= */
 
 function detectQuestionStart(line){
 
@@ -323,7 +595,7 @@ return match[1];
 
 /* =========================================
    WORD DATA
-   ========================================= */
+========================================= */
 
 function getWordData(text){
 
@@ -381,9 +653,11 @@ optionNumber:currentOption
 });
 
 return {
+
 lines,
 tokens,
 lineStartPositions
+
 };
 
 }
@@ -391,7 +665,7 @@ lineStartPositions
 
 /* =========================================
    EXACT WORD COMPARISON - MYERS DIFF
-   ========================================= */
+========================================= */
 
 function compareWordsFast(original,typed){
 
@@ -420,6 +694,7 @@ return {
 
 originalCount:0,
 typedCount:0,
+
 missing,
 extra,
 
@@ -450,9 +725,11 @@ trace.push(new Map(V));
 
 for(let k=-d;k<=d;k+=2){
 
-const left=V.has(k-1)?V.get(k-1):-Infinity;
+const left=V.has(k-1)
+?V.get(k-1):-Infinity;
 
-const right=V.has(k+1)?V.get(k+1):-Infinity;
+const right=V.has(k+1)
+?V.get(k+1):-Infinity;
 
 let x;
 
@@ -506,7 +783,9 @@ if(finished)break;
 
 if(!finished){
 
-throw new Error("তুলনা সম্পন্ন করা যায়নি। আবার চেষ্টা করুন।");
+throw new Error(
+"তুলনা সম্পন্ন করা যায়নি। আবার চেষ্টা করুন।"
+);
 
 }
 
@@ -522,9 +801,11 @@ const previousV=trace[d];
 
 const k=x-y;
 
-const left=previousV.has(k-1)?previousV.get(k-1):-Infinity;
+const left=previousV.has(k-1)
+?previousV.get(k-1):-Infinity;
 
-const right=previousV.has(k+1)?previousV.get(k+1):-Infinity;
+const right=previousV.has(k+1)
+?previousV.get(k+1):-Infinity;
 
 let previousK;
 
@@ -541,8 +822,7 @@ previousK=k-1;
 
 
 const previousX=previousV.has(previousK)
-?previousV.get(previousK)
-:0;
+?previousV.get(previousK):0;
 
 const previousY=previousX-previousK;
 
@@ -584,6 +864,7 @@ missing.push({
 
 word:A[x-1].word,
 position:x,
+
 lineIndex:A[x-1].lineIndex,
 wordInLine:A[x-1].wordInLine
 
@@ -626,7 +907,7 @@ lineStartPositions:originalData.lineStartPositions
 
 /* =========================================
    ORIGINAL QUESTION GROUPS
-   ========================================= */
+========================================= */
 
 function buildQuestionGroups(lines){
 
@@ -705,7 +986,7 @@ return groups;
 
 /* =========================================
    ORIGINAL MISSING WORD HIGHLIGHT
-   ========================================= */
+========================================= */
 
 function renderQuestionGroup(group,data,missingPositions){
 
@@ -714,7 +995,9 @@ let html="";
 let globalPosition=1;
 
 
-for(let lineIndex=0;lineIndex<data.originalLines.length;lineIndex++){
+for(let lineIndex=0;
+lineIndex<data.originalLines.length;
+lineIndex++){
 
 const line=data.originalLines[lineIndex];
 
@@ -757,7 +1040,7 @@ return html.trimEnd();
 
 /* =========================================
    EXTRA WORD GROUPING
-   ========================================= */
+========================================= */
 
 function groupExtraWords(extra){
 
@@ -794,7 +1077,7 @@ return Array.from(groups.values());
 
 /* =========================================
    REPORT DISPLAY
-   ========================================= */
+========================================= */
 
 function showReport(data){
 
@@ -833,7 +1116,11 @@ Extra
 
 if(data.missing.length){
 
-html+=`<h3 class="error">❌ Original থেকে বাদ পড়েছে</h3>`;
+html+=`
+<h3 class="error">
+❌ Original থেকে বাদ পড়েছে
+</h3>
+`;
 
 const missingPositions=new Set(
 data.missing.map(item=>item.position)
@@ -881,6 +1168,7 @@ ${escapeHTML(missingText)}
 
 });
 
+
 if(!shownAnyGroup){
 
 data.missing.forEach(item=>{
@@ -891,7 +1179,9 @@ html+=`
 
 <b>Original শব্দের অবস্থান: ${item.position}</b>
 
-<p class="error">${escapeHTML(item.word)}</p>
+<p class="error">
+${escapeHTML(item.word)}
+</p>
 
 </div>
 
@@ -905,15 +1195,17 @@ html+=`
 
 
 /* =========================================
-   EXTRA REPORT - ONE QUESTION, ALL OPTIONS
-   ========================================= */
+   EXTRA REPORT
+========================================= */
 
 if(data.extra.length){
 
 html+=`
+
 <h3 class="error">
 ➕ Typed Text-এ অতিরিক্ত আছে
 </h3>
+
 `;
 
 const questionGroups=new Map();
@@ -961,49 +1253,71 @@ group.questionItems.push(item.word);
 questionGroups.forEach(group=>{
 
 html+=`
+
 <div class="result-item">
 
 <div class="extra-info">
 
 <p>
 <b>📌 প্রশ্ন নম্বর:</b>
+
 ${group.question==="unknown"
 ?"শনাক্ত করা যায়নি"
 :escapeHTML(group.question)}
+
 </p>
 
 </div>
+
 `;
+
 
 if(group.questionItems.length){
 
 html+=`
+
 <div class="extra-line error">
+
 <b>প্রশ্নের অতিরিক্ত লেখা:</b>
+
 ${escapeHTML(group.questionItems.join(" "))}
+
 </div>
+
 `;
 
 }
 
+
 group.options.forEach((words,option)=>{
 
 html+=`
+
 <div class="extra-line error">
+
 <b>অপশন ${escapeHTML(option)}:</b>
+
 ${escapeHTML(words.join(" "))}
+
 </div>
+
 `;
 
 });
 
+
 html+=`
+
 <p class="muted">
+
 <b>Typed Text-এ শব্দের অবস্থান:</b>
+
 ${group.positions.join(", ")}
+
 </p>
 
 </div>
+
 `;
 
 });
@@ -1016,9 +1330,11 @@ ${group.positions.join(", ")}
 if(!data.missing.length&&!data.extra.length){
 
 html+=`
+
 <h3 class="success">
 ✓ দুটি লেখার শব্দ মিলে গেছে।
 </h3>
+
 `;
 
 }
@@ -1027,15 +1343,25 @@ html+=`
 /* FOOTNOTE */
 
 html+=`
+
 <p class="muted">
+
 প্রশ্ন নম্বর ও অপশন Typed Text-এর বিন্যাস অনুযায়ী শনাক্ত করা হয়।
+
 প্রশ্ন বা অপশন শনাক্ত করা না গেলে শনাক্ত করা যায়নি দেখানো হবে।
+
 একই প্রশ্নের অতিরিক্ত শব্দ একটি কার্ডে এবং প্রতিটি অপশন আলাদা লাইনে দেখানো হয়।
+
 লাল রঙে চিহ্নিত শব্দগুলো Original থেকে বাদ পড়েছে।
+
 Original-এ থাকা প্রশ্ন ও অপশনই দেখানো হয়; কোনো প্রশ্ন বা অপশন বানিয়ে যোগ করা হয় না।
+
 অবস্থান বলতে শব্দের ক্রমিক নম্বর বোঝানো হয়েছে, Word-এর প্রকৃত পৃষ্ঠা নম্বর নয়।
+
 OCR-এর ভুল তুলনার ফলকে প্রভাবিত করতে পারে।
+
 </p>
+
 `;
 
 report.innerHTML=html;
@@ -1045,7 +1371,7 @@ report.innerHTML=html;
 
 /* =========================================
    MAIN COMPARISON
-   ========================================= */
+========================================= */
 
 async function startCompare(){
 
@@ -1055,38 +1381,53 @@ const files=Array.from(fileInput.files);
 
 const typed=document.getElementById("typedText").value;
 
-const typingWrap=document.getElementById("typingWrap");
-
-
-const originalInput =
+const originalInput=
 document.getElementById("originalText").value;
+
+const typingWrap=
+document.getElementById("typingWrap");
+
+
+// ORIGINAL INPUT VALIDATION
 
 if(!files.length&&!originalInput.trim()){
 
-alert("Original ফাইল আপলোড করুন অথবা Original Text লিখুন।");
+alert(
+"Original ফাইল আপলোড করুন অথবা Original Text লিখুন।"
+);
 
 return;
 
 }
 
+
+// TYPED TEXT VALIDATION
 
 if(!typed.trim()){
 
-alert("Typed Text বক্সে লেখা পেস্ট করুন।");
+alert(
+"Typed Text বক্সে লেখা পেস্ট করুন।"
+);
 
 return;
 
 }
 
+
+// FILE LIMIT
 
 if(files.length>50){
 
-alert("একবারে সর্বোচ্চ ৫০টি ফাইল নির্বাচন করুন।");
+alert(
+"একবারে সর্বোচ্চ ৫০টি ফাইল নির্বাচন করুন।"
+);
 
 return;
 
 }
 
+
+// START PROCESSING
 
 compareButton.disabled=true;
 
@@ -1101,11 +1442,15 @@ document.getElementById("progressBar").style.width="0%";
 report.innerHTML=
 '<p class="muted">তুলনা চলছে...</p>';
 
+
 try{
 
-let originalText="";
+// DIRECT TEXT FIRST
 
-// সব ফাইল থেকে লেখা সংগ্রহ
+let originalText=originalInput;
+
+
+// EXTRACT ALL SELECTED FILES
 
 for(let i=0;i<files.length;i++){
 
@@ -1117,9 +1462,10 @@ Math.round((i/files.length)*80),
 
 );
 
-const text=await extractFile(files[i]);
+const extractedText=await extractFile(files[i]);
 
-if(!text.trim()){
+
+if(!extractedText.trim()){
 
 throw new Error(
 files[i].name+" থেকে কোনো লেখা পাওয়া যায়নি।"
@@ -1127,11 +1473,30 @@ files[i].name+" থেকে কোনো লেখা পাওয়া যায়
 
 }
 
-originalText+="\n"+text+"\n";
+
+// APPEND FILE TEXT
+
+originalText+="\n"+extractedText+"\n";
 
 }
 
-setProgress(85,"তুলনার প্রস্তুতি চলছে...");
+
+// FINAL ORIGINAL VALIDATION
+
+if(!originalText.trim()){
+
+throw new Error(
+"Original Text পাওয়া যায়নি।"
+);
+
+}
+
+
+setProgress(
+85,
+"তুলনার প্রস্তুতি চলছে..."
+);
+
 
 await new Promise(resolve=>
 
@@ -1143,13 +1508,30 @@ requestAnimationFrame(resolve)
 
 );
 
-setProgress(90,"Myers Diff দিয়ে শব্দ তুলনা করা হচ্ছে...");
 
-const result=compareWordsFast(originalText,typed);
+setProgress(
+90,
+"Myers Diff দিয়ে শব্দ তুলনা করা হচ্ছে..."
+);
 
-setProgress(100,"তুলনা সম্পন্ন হয়েছে।");
+
+// COMPARE
+
+const result=compareWordsFast(
+originalText,
+typed
+);
+
+
+// DISPLAY RESULT
+
+setProgress(
+100,
+"তুলনা সম্পন্ন হয়েছে।"
+);
 
 showReport(result);
+
 
 }catch(error){
 
@@ -1160,6 +1542,7 @@ report.innerHTML=
 '<p class="error">'+
 escapeHTML(error.message||"অজানা সমস্যা হয়েছে।")+
 '</p>';
+
 
 }finally{
 
