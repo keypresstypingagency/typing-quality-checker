@@ -3,130 +3,82 @@
 <html lang="bn">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Typing Quality Checker</title>
 
 <style>
 *{box-sizing:border-box}
-
 body{
- margin:0;
- background:#f3f6fb;
- color:#172b4d;
- font-family:Arial,sans-serif;
+ margin:0;background:#f3f6fb;color:#172b4d;
+ font-family:Arial,sans-serif
 }
-
 header{
- background:#172b4d;
- color:white;
- padding:22px 7%;
+ background:#172b4d;color:white;padding:22px 5%
 }
-
 header h2{margin:0}
-
-main{
- max-width:1050px;
- margin:35px auto;
- padding:0 18px;
-}
-
+main{max-width:1250px;margin:30px auto;padding:0 18px}
 .panel{
- background:white;
- padding:24px;
- border-radius:12px;
- margin-bottom:22px;
- border:1px solid #e1e7f0;
- box-shadow:0 3px 12px #172b4d08;
+ background:white;padding:22px;border-radius:12px;
+ margin-bottom:20px;border:1px solid #e1e7f0;
+ box-shadow:0 3px 12px #172b4d08
 }
-
-.uploads{
- display:grid;
- grid-template-columns:1fr 1fr;
- gap:20px;
+.workspace{
+ display:grid;grid-template-columns:1fr 1fr;gap:20px
 }
-
 .upload{
- border:2px dashed #c5d3e6;
- padding:20px;
- border-radius:10px;
- background:#fafcff;
+ border:2px dashed #aebfd6;padding:25px;
+ border-radius:10px;background:#f9fbff;
+ text-align:center
 }
-
-button{
- background:#1765d1;
- color:white;
- border:0;
- padding:13px 22px;
- border-radius:8px;
- cursor:pointer;
- font-size:15px;
- font-weight:bold;
-}
-
-button:hover{background:#0d50ad}
-
-button:disabled{
- opacity:.6;
- cursor:not-allowed;
-}
-
-.center{text-align:center;margin-top:20px}
-
 textarea{
- width:100%;
- min-height:150px;
- margin:10px 0 20px;
- padding:12px;
- border:1px solid #ccd5e2;
- border-radius:8px;
- font-family:inherit;
- font-size:15px;
- line-height:1.7;
+ width:100%;min-height:350px;padding:14px;
+ border:1px solid #ccd5e2;border-radius:8px;
+ font-size:15px;line-height:1.8;resize:vertical;
+ font-family:Arial,sans-serif
 }
-
-.result{
- padding:16px;
- background:#f7f9fc;
- border-radius:8px;
- overflow-wrap:anywhere;
- line-height:1.8;
+button{
+ background:#1765d1;color:white;border:0;
+ padding:13px 22px;border-radius:8px;
+ cursor:pointer;font-size:15px;font-weight:bold
 }
-
+button:disabled{opacity:.5;cursor:not-allowed}
+.center{text-align:center;margin-top:20px}
+.muted{color:#667085;font-size:13px}
+.file-list{text-align:left;margin-top:15px}
+.file-item{
+ background:white;border:1px solid #e1e7f0;
+ padding:9px;margin:6px 0;border-radius:7px;
+ overflow-wrap:anywhere
+}
+.stats{
+ display:grid;grid-template-columns:repeat(4,1fr);
+ gap:10px;margin:18px 0
+}
+.stat{
+ background:#eef4ff;padding:15px;
+ text-align:center;border-radius:8px
+}
+.stat strong{
+ display:block;font-size:23px;color:#1765d1
+}
+.result-item{
+ border:1px solid #e1e7f0;padding:12px;
+ margin:8px 0;border-radius:8px;background:white;
+ overflow-wrap:anywhere
+}
 .error{color:#c0392b}
 .success{color:#087b58}
-.muted{color:#667085;font-size:13px}
-
-.report-item{
- background:white;
- border:1px solid #e1e7f0;
- border-radius:8px;
- padding:12px;
- margin:10px 0;
+.progress{
+ background:#e8edf5;border-radius:20px;
+ height:9px;overflow:hidden;margin:12px 0
 }
-
-.stats{
- display:grid;
- grid-template-columns:repeat(3,1fr);
- gap:12px;
- margin:15px 0;
+.progress div{
+ height:100%;width:0;background:#1765d1;
+ transition:width .2s
 }
-
-.stat{
- background:#eef4ff;
- padding:15px;
- border-radius:8px;
- text-align:center;
-}
-
-.stat strong{
- display:block;
- font-size:24px;
- color:#1765d1;
-}
-
-@media(max-width:650px){
- .uploads{grid-template-columns:1fr}
- .stats{grid-template-columns:1fr}
+@media(max-width:750px){
+ .workspace{grid-template-columns:1fr}
+ .stats{grid-template-columns:repeat(2,1fr)}
 }
 </style>
 </head>
@@ -135,7 +87,7 @@ textarea{
 
 <header>
 <h2>✦ Typing Quality Checker</h2>
-<p class="muted" style="color:#dce7f7">
+<p style="color:#dce7f7;margin-bottom:0">
 Smart Document Verification System
 </p>
 </header>
@@ -144,382 +96,413 @@ Smart Document Verification System
 
 <h1>Document Quality Checker</h1>
 <p class="muted">
-Original Document এবং Typed Document-এর পার্থক্য শনাক্ত করুন।
+একাধিক Original ফাইল আপলোড করুন এবং পাশে Typed Text পেস্ট করুন।
 </p>
 
 <section class="panel">
 
-<h3>১. ফাইল আপলোড করুন</h3>
+<div class="workspace">
 
-<div class="uploads">
-
+<div>
+<h3>📁 Original Files</h3>
 <div class="upload">
-<h3>📄 Original File</h3>
-<p class="muted">মূল TXT, PDF অথবা DOCX ফাইল নির্বাচন করুন</p>
-<input type="file" id="originalFile" accept=".txt,.pdf,.docx">
-<p id="originalName" class="muted">কোনো ফাইল নির্বাচন করা হয়নি</p>
+<p>PDF, DOCX, TXT, JPG, PNG নির্বাচন করুন</p>
+<input
+ type="file"
+ id="originalFiles"
+ multiple
+ accept=".pdf,.docx,.txt,.jpg,.jpeg,.png,.webp"
+>
+<p class="muted">একাধিক ফাইল নির্বাচন করতে পারবেন</p>
+</div>
+<div id="fileList" class="file-list"></div>
 </div>
 
-<div class="upload">
-<h3>📝 Typed File</h3>
-<p class="muted">টাইপ করা TXT, PDF অথবা DOCX ফাইল নির্বাচন করুন</p>
-<input type="file" id="typedFile" accept=".txt,.pdf,.docx">
-<p id="typedName" class="muted">কোনো ফাইল নির্বাচন করা হয়নি</p>
+<div>
+<h3>⌨️ Typed Text</h3>
+<textarea
+ id="typedText"
+ placeholder="এখানে আপনার টাইপ করা লেখা পেস্ট করুন..."
+></textarea>
+<p class="muted">
+এখানে সম্পূর্ণ টাইপ করা লেখা পেস্ট করুন।
+</p>
 </div>
 
 </div>
 
 <div class="center">
-<button id="compareFilesButton" onclick="compareFiles()">
+<button id="compareButton" onclick="startCompare()">
 Compare Documents
 </button>
 </div>
 
-</section>
-
-<section class="panel">
-
-<h3>২. Manual Text Comparison</h3>
-
-<label>Original Text</label>
-<textarea id="originalText" placeholder="মূল লেখাটি এখানে লিখুন"></textarea>
-
-<label>Typed Text</label>
-<textarea id="typedText" placeholder="টাইপ করা লেখাটি এখানে লিখুন"></textarea>
-
-<div class="center">
-<button onclick="compareText()">Compare Text</button>
+<div id="progressArea" style="display:none">
+<p id="statusText" class="muted">প্রস্তুতি চলছে...</p>
+<div class="progress"><div id="progressBar"></div></div>
 </div>
 
 </section>
 
 <section class="panel">
-
-<h3>৩. Comparison Report</h3>
-
-<div id="report" class="result">
+<h3>📊 Comparison Report</h3>
+<div id="report" class="muted">
 এখনো কোনো তুলনা করা হয়নি।
 </div>
-
 </section>
 
 </main>
 
-<!-- PDF Library -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-
-<!-- DOCX Library -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/diff/5.2.0/diff.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
 
 <script>
 
-const originalFile=document.getElementById("originalFile");
-const typedFile=document.getElementById("typedFile");
+const API_URL =
+"https://typing-quality-backend.onrender.com";
 
-originalFile.addEventListener("change",function(){
- document.getElementById("originalName").textContent=
- this.files[0]?.name || "কোনো ফাইল নির্বাচন করা হয়নি";
-});
+const fileInput = document.getElementById("originalFiles");
 
-typedFile.addEventListener("change",function(){
- document.getElementById("typedName").textContent=
- this.files[0]?.name || "কোনো ফাইল নির্বাচন করা হয়নি";
-});
+fileInput.addEventListener("change",showFiles);
 
-function normalizeBanglaText(text){
+function showFiles(){
 
- return text
-  .normalize("NFC")
-  .replace(/[\u200B-\u200D\uFEFF]/g,"")
-  .replace(/\s+/g," ")
-  .trim();
+ const list=document.getElementById("fileList");
+ list.innerHTML="";
+
+ const files=Array.from(fileInput.files);
+
+ files.forEach((file,index)=>{
+
+  const item=document.createElement("div");
+  item.className="file-item";
+
+  item.textContent=
+  (index+1)+". "+file.name+
+  " ("+(file.size/1024/1024).toFixed(2)+" MB)";
+
+  list.appendChild(item);
+
+ });
+
+}
+
+function normalizeText(text){
+
+ return String(text)
+ .normalize("NFC")
+ .replace(/[\u200B-\u200D\uFEFF]/g,"")
+ .replace(/\r\n/g,"\n")
+ .replace(/\r/g,"\n")
+ .trim();
 
 }
 
 function escapeHTML(value){
- return String(value).replace(/[&<>"']/g,function(c){
-  return {
-   "&":"&amp;",
-   "<":"&lt;",
-   ">":"&gt;",
-   '"':"&quot;",
-   "'":"&#39;"
-  }[c];
+
+ return String(value).replace(/[&<>"']/g,c=>({
+  "&":"&amp;",
+  "<":"&lt;",
+  ">":"&gt;",
+  '"':"&quot;",
+  "'":"&#39;"
+ })[c]);
+
+}
+
+function setProgress(percent,message){
+
+ document.getElementById("progressBar").style.width=
+ percent+"%";
+
+ document.getElementById("statusText").textContent=
+ message;
+
+}
+
+async function extractFile(file){
+
+ const name=file.name.toLowerCase();
+
+ // Image OCR
+ if(/\.(jpg|jpeg|png|webp)$/i.test(name)){
+
+  if(!window.Tesseract){
+   throw new Error("OCR Library লোড হয়নি।");
+  }
+
+  const result=await Tesseract.recognize(
+   file,
+   "ben+eng",
+   {
+    logger:m=>{
+     if(m.status==="recognizing text"){
+      setProgress(
+       Math.round((m.progress||0)*100),
+       "ছবি থেকে লেখা পড়া হচ্ছে..."
+      );
+     }
+    }
+   }
+  );
+
+  return result.data.text;
+ }
+
+ // PDF, DOCX, TXT backend extraction
+ const formData=new FormData();
+ formData.append("file",file);
+
+ const response=await fetch(API_URL+"/extract",{
+  method:"POST",
+  body:formData
  });
+
+ if(!response.ok){
+
+  let message="ফাইল পড়তে সমস্যা হয়েছে।";
+
+  try{
+   const error=await response.json();
+   message=error.detail||message;
+  }catch(e){}
+
+  throw new Error(file.name+": "+message);
+
+ }
+
+ const result=await response.json();
+
+ return result.text||"";
+
 }
 
 
-// Smart comparison using LCS
-function makeReport(original,typed){
+// Word token comparison
+function compareWords(original,typed){
 
-original=normalizeBanglaText(original);
-typed=normalizeBanglaText(typed);
+ const A=normalizeText(original).split(/\s+/u).filter(Boolean);
+ const B=normalizeText(typed).split(/\s+/u).filter(Boolean);
 
-const A=original.split(/\s+/u).filter(Boolean);
- const B=typed.split(/\s+/u).filter(Boolean);
-
- const n=A.length;
- const m=B.length;
-
- const dp=Array.from(
-  {length:n+1},
-  ()=>new Uint32Array(m+1)
- );
-
- for(let i=n-1;i>=0;i--){
-  for(let j=m-1;j>=0;j--){
-
-   if(A[i]===B[j]){
-    dp[i][j]=1+dp[i+1][j+1];
-   }else{
-    dp[i][j]=Math.max(
-     dp[i+1][j],
-     dp[i][j+1]
-    );
-   }
-
-  }
+ if(!window.Diff || !Diff.diffArrays){
+  throw new Error("Comparison Library লোড হয়নি।");
  }
 
- let i=0,j=0;
- const missing=[];
- const extra=[];
+ const changes=Diff.diffArrays(A,B);
 
- while(i<n && j<m){
+ let missing=[];
+ let extra=[];
 
-  if(A[i]===B[j]){
-   i++;
-   j++;
+ let originalPosition=0;
+ let typedPosition=0;
+
+ changes.forEach(part=>{
+
+  const words=part.value||[];
+
+  if(part.removed){
+
+   words.forEach(word=>{
+    missing.push({
+     word:word,
+     position:originalPosition+1
+    });
+    originalPosition++;
+   });
+
   }
 
-  else if(dp[i+1][j]>=dp[i][j+1]){
-   missing.push({
-    word:A[i],
-    position:i+1
+  else if(part.added){
+
+   words.forEach(word=>{
+    extra.push({
+     word:word,
+     position:typedPosition+1
+    });
+    typedPosition++;
    });
-   i++;
+
   }
 
   else{
-   extra.push({
-    word:B[j],
-    position:j+1
-   });
-   j++;
+
+   originalPosition+=words.length;
+   typedPosition+=words.length;
+
   }
 
- }
+ });
 
- while(i<n){
-  missing.push({
-   word:A[i],
-   position:i+1
-  });
-  i++;
- }
+ return {
+  originalCount:A.length,
+  typedCount:B.length,
+  missing,
+  extra
+ };
 
- while(j<m){
-  extra.push({
-   word:B[j],
-   position:j+1
-  });
-  j++;
- }
+}
+
+
+function showReport(data){
+
+ const report=document.getElementById("report");
 
  let html=`
- <h3>তুলনার ফলাফল</h3>
 
  <div class="stats">
 
  <div class="stat">
- <strong>${n}</strong>
- Original শব্দ
+ <strong>${data.originalCount}</strong>
+ Original Words
  </div>
 
  <div class="stat">
- <strong>${m}</strong>
- Typed শব্দ
+ <strong>${data.typedCount}</strong>
+ Typed Words
  </div>
 
  <div class="stat">
- <strong>${missing.length+extra.length}</strong>
- মোট পার্থক্য
+ <strong>${data.missing.length}</strong>
+ Missing
+ </div>
+
+ <div class="stat">
+ <strong>${data.extra.length}</strong>
+ Extra
  </div>
 
  </div>
 
- <p>বাদ পড়েছে: <b>${missing.length}</b> টি শব্দ</p>
- <p>অতিরিক্ত আছে: <b>${extra.length}</b> টি শব্দ</p>
  `;
 
- if(missing.length){
+ if(data.missing.length){
 
   html+=`
-  <h4 class="error">Original থেকে বাদ পড়েছে</h4>
+  <h3 class="error">❌ Original থেকে বাদ পড়েছে</h3>
   `;
 
-  missing.forEach(item=>{
+  data.missing.forEach(item=>{
+
    html+=`
-   <div class="report-item">
+   <div class="result-item">
    <b>Original শব্দের অবস্থান: ${item.position}</b>
    <p class="error">${escapeHTML(item.word)}</p>
    </div>
    `;
+
   });
 
  }
 
- if(extra.length){
+ if(data.extra.length){
 
   html+=`
-  <h4 class="error">Typed ফাইলে অতিরিক্ত আছে</h4>
+  <h3 class="error">➕ Typed Text-এ অতিরিক্ত আছে</h3>
   `;
 
-  extra.forEach(item=>{
+  data.extra.forEach(item=>{
+
    html+=`
-   <div class="report-item">
+   <div class="result-item">
    <b>Typed শব্দের অবস্থান: ${item.position}</b>
    <p class="error">${escapeHTML(item.word)}</p>
    </div>
    `;
+
   });
 
  }
 
- if(!missing.length && !extra.length){
+ if(!data.missing.length&&!data.extra.length){
 
   html+=`
-  <p class="success">
-  ✓ দুটি লেখার শব্দের ক্রম ও সংখ্যা মিলে গেছে।
-  </p>
+  <h3 class="success">
+  ✓ দুটি লেখার শব্দ মিলে গেছে।
+  </h3>
   `;
 
  }
 
  html+=`
- <hr>
  <p class="muted">
- পদ্ধতি: Longest Common Subsequence (LCS).
- এটি শব্দের ক্রম অনুযায়ী বাদ পড়া ও অতিরিক্ত শব্দ শনাক্ত করে।
- এটি এখনো পূর্ণাঙ্গ বানান, OCR বা পৃষ্ঠা-ভিত্তিক যাচাই নয়।
+ অবস্থান বলতে শব্দের ক্রমিক নম্বর বোঝানো হয়েছে।
+ এটি এখনো Word-এর প্রকৃত পৃষ্ঠা নম্বর নয়।
+ OCR-এর ভুলও তুলনার ফলে প্রভাব ফেলতে পারে।
  </p>
  `;
 
- document.getElementById("report").innerHTML=html;
+ report.innerHTML=html;
 
 }
 
 
-// Extract text from TXT, PDF and DOCX
-async function extractText(file){
+// Main comparison
+async function startCompare(){
 
- const name=file.name.toLowerCase();
-
- // TXT
- if(name.endsWith(".txt")){
-  return await file.text();
- }
-
- // PDF
- if(name.endsWith(".pdf")){
-
-  if(!window.pdfjsLib){
-   throw new Error("PDF Library load হয়নি। ইন্টারনেট সংযোগ পরীক্ষা করুন।");
-  }
-
-  const pdfjs=window.pdfjsLib;
-
-  pdfjs.GlobalWorkerOptions.workerSrc=
-  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-
-  const buffer=await file.arrayBuffer();
-
-  const pdf=await pdfjs.getDocument({
-   data:new Uint8Array(buffer)
-  }).promise;
-
-  let fullText="";
-
-  for(let pageNumber=1;pageNumber<=pdf.numPages;pageNumber++){
-
-   const page=await pdf.getPage(pageNumber);
-   const content=await page.getTextContent();
-
-  const pageText=content.items
- .map(item=>item.str)
- .join("")
- .normalize("NFC");
-
-   fullText+=pageText+"\n";
-
-  }
-
-  return fullText;
- }
-
- // DOCX
- if(name.endsWith(".docx")){
-
-  if(!window.mammoth){
-   throw new Error("Word Library load হয়নি। ইন্টারনেট সংযোগ পরীক্ষা করুন।");
-  }
-
-  const buffer=await file.arrayBuffer();
-
-  const result=await window.mammoth.extractRawText({
-   arrayBuffer:buffer
-  });
-
-  return result.value;
- }
-
- throw new Error("এই ফাইলের ফরম্যাট সমর্থিত নয়।");
-}
-
-
-// Compare uploaded files
-async function compareFiles(){
-
- const button=document.getElementById("compareFilesButton");
+ const button=document.getElementById("compareButton");
  const report=document.getElementById("report");
+ const files=Array.from(fileInput.files);
+ const typed=document.getElementById("typedText").value;
+
+ if(!files.length){
+  alert("কমপক্ষে একটি Original ফাইল নির্বাচন করুন।");
+  return;
+ }
+
+ if(!typed.trim()){
+  alert("Typed Text বক্সে লেখা পেস্ট করুন।");
+  return;
+ }
+
+ if(files.length>50){
+  alert("একবারে সর্বোচ্চ ৫০টি ফাইল নির্বাচন করুন।");
+  return;
+ }
+
+ button.disabled=true;
+ button.textContent="Processing...";
+
+ document.getElementById("progressArea").style.display="block";
 
  try{
 
-  const fileA=originalFile.files[0];
-  const fileB=typedFile.files[0];
+  let originalText="";
 
-  if(!fileA || !fileB){
-   alert("দয়া করে দুটি ফাইল নির্বাচন করুন।");
-   return;
+  for(let i=0;i<files.length;i++){
+
+   setProgress(
+    Math.round((i/files.length)*80),
+    "ফাইল পড়া হচ্ছে: "+files[i].name+
+    " ("+(i+1)+"/"+files.length+")"
+   );
+
+   const text=await extractFile(files[i]);
+
+   if(!text.trim()){
+    throw new Error(
+     files[i].name+" থেকে কোনো লেখা পাওয়া যায়নি।"
+    );
+   }
+
+   originalText+="\n"+text+"\n";
+
   }
 
-  const maxSize=5*1024*1024;
+  setProgress(85,"লেখা তুলনা করা হচ্ছে...");
 
-  if(fileA.size>maxSize || fileB.size>maxSize){
-   alert("প্রতিটি ফাইল সর্বোচ্চ 5 MB হতে পারবে।");
-   return;
-  }
+  const result=compareWords(originalText,typed);
 
-  button.disabled=true;
-  button.textContent="Processing...";
-  report.textContent="ফাইল পড়া হচ্ছে, অপেক্ষা করুন...";
+  setProgress(100,"তুলনা সম্পন্ন হয়েছে।");
 
-  const a=await extractText(fileA);
-  const b=await extractText(fileB);
-
-  if(!a.trim() || !b.trim()){
-   throw new Error("ফাইল থেকে কোনো লেখা পাওয়া যায়নি। স্ক্যান করা PDF হলে OCR প্রয়োজন।");
-  }
-
-  makeReport(a,b);
+  showReport(result);
 
  }catch(error){
 
   console.error(error);
 
   report.innerHTML=
-  '<p class="error">ফাইল পড়তে সমস্যা হয়েছে: '+
-  escapeHTML(error.message)+'</p>';
+  '<p class="error">'+escapeHTML(error.message)+
+  '</p>';
 
  }finally{
 
@@ -527,22 +510,6 @@ async function compareFiles(){
   button.textContent="Compare Documents";
 
  }
-
-}
-
-
-// Manual text comparison
-function compareText(){
-
- const a=document.getElementById("originalText").value;
- const b=document.getElementById("typedText").value;
-
- if(!a.trim() || !b.trim()){
-  alert("দয়া করে দুটি বক্সেই লেখা দিন।");
-  return;
- }
-
- makeReport(a,b);
 
 }
 
