@@ -290,7 +290,6 @@ return (String(text).match(regex)||[]).length;
 
 /* =====================================
    PDF TEXT QUALITY CHECK
-   বাংলা PDF ফন্ট এনকোডিং সমস্যা শনাক্ত
 ===================================== */
 
 function inspectExtractedText(text){
@@ -340,8 +339,6 @@ dRatio,
 words
 };
 }
-
-/* OCR এবং Extracted Text-এর মান তুলনা */
 
 function textQualityScore(text){
 
@@ -565,7 +562,6 @@ return ocrWorker;
 
 /* =====================================
    IMAGE PREPROCESSING
-   অক্ষর মুছে যাওয়ার ঝুঁকি কমানো হয়েছে
 ===================================== */
 
 async function preprocessImage(blob){
@@ -597,20 +593,9 @@ ctx.fillRect(0,0,canvas.width,canvas.height);
 ctx.imageSmoothingEnabled=true;
 ctx.imageSmoothingQuality="high";
 
-ctx.drawImage(
-bitmap,
-0,0,
-canvas.width,
-canvas.height
-);
+ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);
 
 bitmap.close();
-
-/*
-আগের কোডে শক্ত Threshold ব্যবহার করা হচ্ছিল।
-এতে বাংলা কার, ফলা, ছোট চিহ্ন এবং গণিতের চিহ্ন হারাতে পারে।
-এখন শুধু হালকা Grayscale ও Contrast ব্যবহার করা হচ্ছে।
-*/
 
 try{
 
@@ -720,12 +705,12 @@ return blob;
 }
 
 /* =====================================
-   PDF EXTRACTION - IMPROVED SMART MODE
+   PDF EXTRACTION - FIXED
 
-   1. প্রথমে PDF Text Extraction
-   2. Extracted Text-এর মান পরীক্ষা
-   3. বিকৃত লেখা পাওয়া গেলে OCR
-   4. OCR-এর ফলাফল ও Extracted Text তুলনা
+   গুরুত্বপূর্ণ:
+   পৃষ্ঠা নম্বর, OCR Status বা
+   অন্য কোনো কৃত্রিম Label আর
+   Original Text-এর সঙ্গে যোগ হবে না।
 ===================================== */
 
 async function extractPDF(file){
@@ -775,20 +760,6 @@ console.warn("PDF text extraction:",error);
 
 const qualityInfo=inspectExtractedText(pageText);
 
-/*
-OCR চালানোর সিদ্ধান্ত:
-
-OCR Mode:
-সব পৃষ্ঠায় OCR।
-
-Text Mode:
-কখনো OCR নয়।
-
-Smart Mode:
-লেখা কম, বাংলা ফন্ট বিকৃত,
-অথবা অজানা অক্ষর থাকলে OCR।
-*/
-
 const shouldOCR=
 mode==="ocr"||
 (mode==="smart"&&qualityInfo.suspicious);
@@ -809,27 +780,15 @@ mode==="ocr"
 const blob=await renderPDFPage(page);
 
 if(blob){
-
 scannedText=await recognizeImage(blob);
-
 }
 
 }catch(error){
 
-console.error(
-"Page OCR failed:",
-pageNo,
-error
-);
+console.error("Page OCR failed:",pageNo,error);
 
 failedOCRPages++;
 }
-
-/*
-OCR থেকে যথেষ্ট লেখা পাওয়া গেলে
-Smart Mode-এ OCR ফলাফল গ্রহণ করা হবে।
-OCR ব্যর্থ হলে আগের Extracted Text রাখা হবে।
-*/
 
 if(scannedText.trim()){
 
@@ -849,11 +808,6 @@ Math.min(
 Math.max(30,pageText.replace(/\s/g,"").length*0.35),
 100
 );
-
-/*
-বিকৃত PDF Text-এর পরিবর্তে OCR ফলাফল নেওয়া।
-OCR ফলাফল খুব ছোট হলে আগের লেখা রাখা হবে।
-*/
 
 if(
 enoughOCRText &&
@@ -882,20 +836,16 @@ directPages++;
 directPages++;
 }
 
-/* পৃষ্ঠা নম্বর ও OCR অবস্থা */
+/*
+সংশোধিত অংশ:
+এখানে আর পৃষ্ঠা নম্বর বা OCR Label
+মূল লেখার সঙ্গে যোগ করা হচ্ছে না।
+শুধু PDF-এর প্রকৃত Text রাখা হচ্ছে।
+*/
 
-const sourceLabel=
-shouldOCR
-?(
-pageText.trim()
-?"[OCR/Smart যাচাই করা পৃষ্ঠা]"
-:"[OCR ব্যর্থ - PDF Text]"
-)
-:"[PDF Text Extraction]";
-
-output.push(
-`\nপৃষ্ঠা ${pageNo} ${sourceLabel}\n${pageText}`
-);
+if(pageText.trim()){
+output.push(pageText.trim());
+}
 
 }
 
@@ -906,7 +856,8 @@ directPages,
 failedOCRPages
 });
 
-return output.join("\n");
+/* পৃষ্ঠার লেখা আলাদা লাইনে রাখা হবে, কিন্তু কোনো Label নয় */
+return output.join("\n\n");
 }
 
 /* =====================================
@@ -952,8 +903,14 @@ if(blob.size>0){
 
 const imageText=await recognizeImage(blob);
 
+/*
+ছবির ফাইলের নাম বা OCR Label
+তুলনার Text-এ যোগ করা হবে না।
+শুধু ছবির শনাক্ত করা প্রকৃত লেখা যোগ হবে।
+*/
+
 if(imageText.trim()){
-text+=`\n\n[DOCX Image: ${path}]\n${imageText}`;
+text+="\n\n"+imageText.trim();
 }
 
 }
