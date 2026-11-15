@@ -25,7 +25,7 @@ textarea{width:100%;min-height:350px;padding:14px;border:1px solid #ccd5e2;borde
 button{background:#1765d1;color:white;border:0;padding:13px 22px;border-radius:8px;cursor:pointer;font-size:15px;font-weight:bold}
 button:disabled{opacity:.5;cursor:not-allowed}
 .center{text-align:center;margin-top:20px}
-.muted{color:#667085;font-size:13px}
+.muted{color:#667085;font-size:13px;line-height:1.7}
 .file-list{text-align:left;margin-top:15px}
 .file-item{background:white;border:1px solid #e1e7f0;padding:9px;margin:6px 0;border-radius:7px;overflow-wrap:anywhere}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0}
@@ -46,6 +46,10 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .setting{background:#f8fafc;border:1px solid #e1e7f0;border-radius:8px;padding:12px}
 .setting label{display:block;font-weight:bold;font-size:13px;margin-bottom:8px}
 select{width:100%;padding:10px;border:1px solid #ccd5e2;border-radius:7px;background:white;color:#172b4d}
+.math-setting{display:flex;align-items:center;gap:9px;margin-top:12px;padding:12px;background:#f0f6ff;border:1px solid #d8e6fa;border-radius:8px}
+.math-setting input{width:18px;height:18px}
+.math-setting label{font-weight:bold}
+.hidden{display:none!important}
 @media(max-width:750px){.workspace{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.settings{grid-template-columns:1fr}}
 </style>
 </head>
@@ -89,6 +93,7 @@ select{width:100%;padding:10px;border:1px solid #ccd5e2;border-radius:7px;backgr
 </div>
 
 <div class="settings">
+
 <div class="setting">
 <label for="pdfMode">PDF পড়ার পদ্ধতি</label>
 <select id="pdfMode">
@@ -108,24 +113,48 @@ select{width:100%;padding:10px;border:1px solid #ccd5e2;border-radius:7px;backgr
 </div>
 
 <div class="setting">
-<label for="ocrLanguages">OCR Languages</label>
-<select id="ocrLanguages">
-<option value="ben+eng+ara+urd+fas" selected>বাংলা + English + Arabic + Urdu + Persian</option>
-<option value="ben+eng+equ">বাংলা + English + Math</option>
-<option value="eng+equ">English + Math</option>
-<option value="ben+eng+ara+urd+fas+equ">সব ভাষা + Math</option>
-<option value="ben+eng">বাংলা + English</option>
-<option value="ben">শুধু বাংলা</option>
-<option value="eng">শুধু English</option>
-<option value="ara+urd+fas">Arabic + Urdu + Persian</option>
-<option value="equ">শুধু Math / Equation</option>
+<label for="ocrMode">OCR Language Mode</label>
+<select id="ocrMode">
+<option value="auto" selected>Auto Detect - স্বয়ংক্রিয়</option>
+<option value="manual">Manual - নিজে নির্বাচন করুন</option>
 </select>
 </div>
+
+<div class="setting" id="manualLanguageSetting">
+<label for="ocrLanguages">Manual OCR Languages</label>
+<select id="ocrLanguages">
+<option value="ben+eng" selected>বাংলা + English</option>
+<option value="ben">শুধু বাংলা</option>
+<option value="eng">শুধু English</option>
+<option value="ara">শুধু Arabic</option>
+<option value="urd">শুধু Urdu</option>
+<option value="fas">শুধু Farsi / Persian</option>
+<option value="ara+urd+fas">Arabic + Urdu + Farsi</option>
+<option value="ben+eng+ara+urd+fas">সব ভাষা একসঙ্গে</option>
+<option value="ben+eng+ara">বাংলা + English + Arabic</option>
+<option value="ben+eng+urd">বাংলা + English + Urdu</option>
+<option value="ben+eng+fas">বাংলা + English + Farsi</option>
+</select>
+</div>
+
+<div class="setting">
+<label>Math Recognition</label>
+<div class="math-setting">
+<input type="checkbox" id="mathMode">
+<label for="mathMode">Math Mode চালু করুন</label>
+</div>
+<p class="muted">সংখ্যা, গাণিতিক চিহ্ন ও সাধারণ সূত্র পড়ার জন্য উন্নত OCR ব্যবহার হবে।</p>
+</div>
+
+<div class="setting">
+<label>Auto Detection</label>
+<p class="muted" style="margin:0">Auto Mode বাংলা, Latin ও Arabic script শনাক্ত করার চেষ্টা করবে। Arabic script-এর ক্ষেত্রে Urdu ও Farsi আলাদা করে শনাক্ত করা সবসময় সম্ভব নয়।</p>
+</div>
+
 </div>
 
 <p class="muted">
-Math OCR-এ সমীকরণ ও গাণিতিক চিহ্ন শনাক্ত করার জন্য equ মডেল ব্যবহার করা হয়।
-জটিল সূত্রের ক্ষেত্রে ফলাফল যাচাই করে নেবেন।
+সমর্থিত ভাষা: বাংলা, English, Arabic, Urdu ও Farsi। Math Mode সাধারণ সংখ্যা ও গাণিতিক চিহ্ন পড়তে সাহায্য করে। জটিল সমীকরণ বা সূত্রের ক্ষেত্রে OCR ফলাফল যাচাই করুন।
 </p>
 
 <div class="center">
@@ -155,10 +184,15 @@ Math OCR-এ সমীকরণ ও গাণিতিক চিহ্ন শন
 
 const fileInput=document.getElementById("originalFiles");
 const compareButton=document.getElementById("compareButton");
+const ocrModeSelect=document.getElementById("ocrMode");
+const languageSelect=document.getElementById("ocrLanguages");
+const manualLanguageSetting=document.getElementById("manualLanguageSetting");
+const mathModeCheckbox=document.getElementById("mathMode");
 
 let ocrWorker=null;
 let ocrWorkerLanguage="";
-let ocrBusy=false;
+let osdWorker=null;
+let osdUnavailable=false;
 
 if(window.pdfjsLib){
 pdfjsLib.GlobalWorkerOptions.workerSrc=
@@ -167,6 +201,16 @@ pdfjsLib.GlobalWorkerOptions.workerSrc=
 
 fileInput.addEventListener("change",showFiles);
 compareButton.addEventListener("click",startCompare);
+ocrModeSelect.addEventListener("change",updateLanguageMode);
+
+function updateLanguageMode(){
+manualLanguageSetting.classList.toggle(
+"hidden",
+ocrModeSelect.value!=="manual"
+);
+}
+
+updateLanguageMode();
 
 function showFiles(){
 const list=document.getElementById("fileList");
@@ -205,15 +249,136 @@ function sleepFrame(){
 return new Promise(resolve=>
 requestAnimationFrame(()=>requestAnimationFrame(resolve))
 );
+
+/* =====================================
+   LANGUAGE MODE
+===================================== */
+
+function getManualLanguages(){
+return languageSelect.value;
+}
+
+function addMathSupport(languages){
+/*
+Math-এর জন্য Tesseract-এর equ model ব্যবহার করা হচ্ছে না।
+English OCR দিয়ে সাধারণ সংখ্যা, অপারেটর ও চিহ্ন পড়ার চেষ্টা হবে।
+*/
+const parts=languages.split("+");
+if(mathModeCheckbox.checked && !parts.includes("eng")){
+parts.push("eng");
+}
+return [...new Set(parts)].join("+");
+}
+
+function getDefaultAutoLanguages(){
+return mathModeCheckbox.checked?"eng":"ben+eng";
+}
+
+/* =====================================
+   AUTO SCRIPT DETECTION
+===================================== */
+
+async function getOSDWorker(){
+if(osdUnavailable)return null;
+if(osdWorker)return osdWorker;
+
+try{
+setProgress(8,"Auto Language Detection প্রস্তুত হচ্ছে...");
+
+osdWorker=await Tesseract.createWorker("osd",1,{
+logger:m=>{
+if(m.status==="loading language traineddata"){
+setProgress(
+Math.round((m.progress||0)*10),
+"Language Detection Data লোড হচ্ছে..."
+);
+}
+}
+});
+
+return osdWorker;
+
+}catch(error){
+console.warn("OSD model unavailable:",error);
+osdUnavailable=true;
+osdWorker=null;
+return null;
+}
+}
+
+function mapDetectedScript(script){
+const value=String(script||"").toLowerCase();
+
+if(value.includes("beng")){
+return "ben+eng";
+}
+
+if(
+value.includes("arab") ||
+value.includes("syri") ||
+value.includes("thaana")
+){
+/* একই Arabic script হওয়ায় Urdu/Farsi নির্দিষ্ট করে বোঝা কঠিন */
+return "ara+urd+fas+eng";
+}
+
+if(
+value.includes("latin") ||
+value.includes("greek")
+){
+return "eng";
+}
+
+if(value.includes("deva")){
+return "eng";
+}
+
+if(value.includes("cyrillic")){
+return "eng";
+}
+
+if(value.includes("han") || value.includes("japan") || value.includes("hangul")){
+return "eng";
+}
+
+return getDefaultAutoLanguages();
+}
+
+async function detectLanguages(blob){
+if(ocrModeSelect.value==="manual"){
+return addMathSupport(getManualLanguages());
+}
+
+let detected=getDefaultAutoLanguages();
+
+const worker=await getOSDWorker();
+
+if(worker){
+try{
+const result=await worker.detect(blob);
+const script=result?.data?.script||"";
+
+if(script){
+detected=mapDetectedScript(script);
+}
+}catch(error){
+console.warn("Automatic detection failed:",error);
+}
+}
+
+if(mathModeCheckbox.checked && !detected.split("+").includes("eng")){
+detected+=" + eng";
+detected=detected.replace(/\s/g,"");
+}
+
+return detected;
 }
 
 /* =====================================
    OCR WORKER
 ===================================== */
 
-async function getOCRWorker(){
-const languages=document.getElementById("ocrLanguages").value;
-
+async function getOCRWorker(languages){
 if(!window.Tesseract){
 throw new Error("Tesseract OCR Library লোড হয়নি। ইন্টারনেট সংযোগ পরীক্ষা করুন।");
 }
@@ -228,9 +393,8 @@ ocrWorker=null;
 ocrWorkerLanguage="";
 }
 
-setProgress(5,"OCR Language Data প্রস্তুত হচ্ছে...");
+setProgress(10,"OCR Language Data প্রস্তুত হচ্ছে...");
 
-try{
 ocrWorker=await Tesseract.createWorker(
 languages,
 1,
@@ -254,28 +418,6 @@ setProgress(
 
 ocrWorkerLanguage=languages;
 
-}catch(error){
-/* equ মডেল না পাওয়া গেলে সাধারণ ভাষার OCR চালু রাখবে */
-if(languages.includes("equ")){
-const fallback=languages.split("+").filter(x=>x!=="equ").join("+");
-if(fallback){
-setProgress(10,"Math মডেল পাওয়া যায়নি। সাধারণ OCR চালু হচ্ছে...");
-ocrWorker=await Tesseract.createWorker(fallback,1,{
-logger:m=>{
-if(m.status==="recognizing text"){
-setProgress(20+Math.round((m.progress||0)*60),"OCR চলছে...");
-}
-}
-});
-ocrWorkerLanguage=fallback;
-}else{
-throw new Error("Math OCR মডেল লোড করা যায়নি।");
-}
-}else{
-throw error;
-}
-}
-
 const quality=document.getElementById("ocrQuality").value;
 
 try{
@@ -298,7 +440,7 @@ return ocrWorker;
 
 async function preprocessImage(blob){
 const quality=document.getElementById("ocrQuality").value;
-const mathMode=document.getElementById("ocrLanguages").value.includes("equ");
+const mathMode=mathModeCheckbox.checked;
 
 let bitmap;
 
@@ -336,18 +478,15 @@ let sum=0;
 const total=pixels.length/4;
 
 for(let i=0;i<pixels.length;i+=4){
-const gray=
+sum+=
 0.299*pixels[i]+
 0.587*pixels[i+1]+
 0.114*pixels[i+2];
-
-sum+=gray;
 }
 
 const average=sum/total;
-const contrast=quality==="normal"?1.15:1.35;
+const contrast=quality==="normal"?1.12:1.25;
 
-/* Math-এর জন্য অতিরিক্ত threshold ব্যবহার করা হচ্ছে না */
 for(let i=0;i<pixels.length;i+=4){
 let gray=
 0.299*pixels[i]+
@@ -356,8 +495,10 @@ let gray=
 
 gray=(gray-128)*contrast+128;
 
-/* হালকা ব্যাকগ্রাউন্ড পরিষ্কার করা */
-if(!mathMode && gray>average+35)gray=255;
+/* Math ও Arabic diacritics নষ্ট না করতে threshold এড়িয়ে চলা */
+if(!mathMode && gray>average+48){
+gray=255;
+}
 
 gray=Math.max(0,Math.min(255,gray));
 
@@ -382,8 +523,13 @@ canvas.height=0;
 return result||blob;
 }
 
+/* =====================================
+   OCR IMAGE
+===================================== */
+
 async function recognizeImage(blob){
-const worker=await getOCRWorker();
+const languages=await detectLanguages(blob);
+const worker=await getOCRWorker(languages);
 const enhanced=await preprocessImage(blob);
 
 const result=await worker.recognize(enhanced);
@@ -606,7 +752,7 @@ return {lines,tokens};
 }
 
 /* =====================================
-   IMPROVED TOKEN DIFF
+   TOKEN DIFF
 ===================================== */
 
 function compareWordsFast(original,typed){
