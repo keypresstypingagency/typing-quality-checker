@@ -8,43 +8,72 @@
 
 <style>
 *{box-sizing:border-box}
+
 body{
- margin:0;background:#f3f6fb;color:#172b4d;
+ margin:0;
+ background:#f3f6fb;
+ color:#172b4d;
  font-family:Arial,sans-serif
 }
+
 header{
- background:#172b4d;color:white;padding:22px 5%
-}
-header h2{margin:0}
-main{max-width:1250px;margin:30px auto;padding:0 18px}
-.panel{
- background:white;padding:22px;border-radius:12px;
- margin-bottom:20px;border:1px solid #e1e7f0;
- box-shadow:0 3px 12px #172b4d08
-}
-.workspace{
- display:grid;grid-template-columns:1fr 1fr;gap:20px
-}
-.upload{
- border:2px dashed #aebfd6;padding:25px;
- border-radius:10px;background:#f9fbff;
- text-align:center
-}
-textarea{
- width:100%;min-height:350px;padding:14px;
- border:1px solid #ccd5e2;border-radius:8px;
- font-size:15px;line-height:1.8;resize:vertical;
- font-family:Arial,sans-serif;
- background:rgba(255,255,255,.96);
- position:relative;z-index:1
+ background:#172b4d;
+ color:white;
+ padding:22px 5%
 }
 
-/* Compare চলার সময় লাল স্ক্যানিং অ্যানিমেশন */
+header h2{margin:0}
+
+main{
+ max-width:1250px;
+ margin:30px auto;
+ padding:0 18px
+}
+
+.panel{
+ background:white;
+ padding:22px;
+ border-radius:12px;
+ margin-bottom:20px;
+ border:1px solid #e1e7f0;
+ box-shadow:0 3px 12px #172b4d08
+}
+
+.workspace{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:20px
+}
+
+.upload{
+ border:2px dashed #aebfd6;
+ padding:25px;
+ border-radius:10px;
+ background:#f9fbff;
+ text-align:center
+}
+
 .typing-wrap{
  position:relative;
- overflow:hidden;
- border-radius:8px
+ border-radius:8px;
+ overflow:hidden
 }
+
+textarea{
+ width:100%;
+ min-height:350px;
+ padding:14px;
+ border:1px solid #ccd5e2;
+ border-radius:8px;
+ font-size:15px;
+ line-height:1.8;
+ resize:vertical;
+ font-family:Arial,sans-serif;
+ background:white;
+ display:block
+}
+
+/* লাল স্ক্যানিং অ্যানিমেশন */
 .scan-overlay{
  display:none;
  position:absolute;
@@ -54,9 +83,11 @@ textarea{
  overflow:hidden;
  border-radius:8px
 }
+
 .typing-wrap.scanning .scan-overlay{
  display:block
 }
+
 .scan-overlay::after{
  content:"";
  position:absolute;
@@ -73,53 +104,101 @@ textarea{
   transparent
  );
  box-shadow:0 0 12px 3px #ff252580;
- animation:scanMove 1.4s linear infinite
+ animation:scanMove 1.5s linear infinite
 }
+
 @keyframes scanMove{
- 0%{transform:translateY(0)}
- 100%{transform:translateY(350px)}
+ from{top:0}
+ to{top:100%}
 }
 
 button{
- background:#1765d1;color:white;border:0;
- padding:13px 22px;border-radius:8px;
- cursor:pointer;font-size:15px;font-weight:bold
+ background:#1765d1;
+ color:white;
+ border:0;
+ padding:13px 22px;
+ border-radius:8px;
+ cursor:pointer;
+ font-size:15px;
+ font-weight:bold
 }
-button:disabled{opacity:.5;cursor:not-allowed}
-.center{text-align:center;margin-top:20px}
-.muted{color:#667085;font-size:13px}
-.file-list{text-align:left;margin-top:15px}
+
+button:disabled{
+ opacity:.5;
+ cursor:not-allowed
+}
+
+.center{
+ text-align:center;
+ margin-top:20px
+}
+
+.muted{
+ color:#667085;
+ font-size:13px
+}
+
+.file-list{
+ text-align:left;
+ margin-top:15px
+}
+
 .file-item{
- background:white;border:1px solid #e1e7f0;
- padding:9px;margin:6px 0;border-radius:7px;
+ background:white;
+ border:1px solid #e1e7f0;
+ padding:9px;
+ margin:6px 0;
+ border-radius:7px;
  overflow-wrap:anywhere
 }
+
 .stats{
- display:grid;grid-template-columns:repeat(4,1fr);
- gap:10px;margin:18px 0
+ display:grid;
+ grid-template-columns:repeat(4,1fr);
+ gap:10px;
+ margin:18px 0
 }
+
 .stat{
- background:#eef4ff;padding:15px;
- text-align:center;border-radius:8px
+ background:#eef4ff;
+ padding:15px;
+ text-align:center;
+ border-radius:8px
 }
+
 .stat strong{
- display:block;font-size:23px;color:#1765d1
+ display:block;
+ font-size:23px;
+ color:#1765d1
 }
+
 .result-item{
- border:1px solid #e1e7f0;padding:12px;
- margin:8px 0;border-radius:8px;background:white;
+ border:1px solid #e1e7f0;
+ padding:12px;
+ margin:8px 0;
+ border-radius:8px;
+ background:white;
  overflow-wrap:anywhere
 }
+
 .error{color:#c0392b}
 .success{color:#087b58}
+
 .progress{
- background:#e8edf5;border-radius:20px;
- height:9px;overflow:hidden;margin:12px 0
+ background:#e8edf5;
+ border-radius:20px;
+ height:9px;
+ overflow:hidden;
+ margin:12px 0
 }
+
 .progress div{
- height:100%;width:0;background:#1765d1;
+ height:100%;
+ width:0;
+ background:#1765d1;
  transition:width .2s
 }
+
 @media(max-width:750px){
  .workspace{grid-template-columns:1fr}
  .stats{grid-template-columns:repeat(2,1fr)}
@@ -149,16 +228,20 @@ Smart Document Verification System
 
 <div>
 <h3>📁 Original Files</h3>
+
 <div class="upload">
 <p>PDF, DOCX, TXT, JPG, PNG নির্বাচন করুন</p>
+
 <input
  type="file"
  id="originalFiles"
  multiple
  accept=".pdf,.docx,.txt,.jpg,.jpeg,.png,.webp"
 >
+
 <p class="muted">একাধিক ফাইল নির্বাচন করতে পারবেন</p>
 </div>
+
 <div id="fileList" class="file-list"></div>
 </div>
 
@@ -170,6 +253,7 @@ Smart Document Verification System
  id="typedText"
  placeholder="এখানে আপনার টাইপ করা লেখা পেস্ট করুন..."
 ></textarea>
+
 <div class="scan-overlay"></div>
 </div>
 
@@ -188,13 +272,16 @@ Compare Documents
 
 <div id="progressArea" style="display:none">
 <p id="statusText" class="muted">প্রস্তুতি চলছে...</p>
-<div class="progress"><div id="progressBar"></div></div>
+<div class="progress">
+<div id="progressBar"></div>
+</div>
 </div>
 
 </section>
 
 <section class="panel">
 <h3>📊 Comparison Report</h3>
+
 <div id="report" class="muted">
 এখনো কোনো তুলনা করা হয়নি।
 </div>
@@ -202,6 +289,10 @@ Compare Documents
 
 </main>
 
+<!-- Comparison library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/diff/5.2.0/diff.min.js"></script>
+
+<!-- Image OCR library -->
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
 
 <script>
@@ -209,13 +300,17 @@ Compare Documents
 const API_URL =
 "https://typing-quality-backend.onrender.com";
 
-const fileInput = document.getElementById("originalFiles");
+const fileInput =
+document.getElementById("originalFiles");
 
 fileInput.addEventListener("change",showFiles);
 
+
+// ফাইলের তালিকা দেখানো
 function showFiles(){
 
  const list=document.getElementById("fileList");
+
  list.innerHTML="";
 
  const files=Array.from(fileInput.files);
@@ -223,11 +318,12 @@ function showFiles(){
  files.forEach((file,index)=>{
 
   const item=document.createElement("div");
+
   item.className="file-item";
 
   item.textContent=
-  (index+1)+". "+file.name+
-  " ("+(file.size/1024/1024).toFixed(2)+" MB)";
+   (index+1)+". "+file.name+
+   " ("+(file.size/1024/1024).toFixed(2)+" MB)";
 
   list.appendChild(item);
 
@@ -235,17 +331,21 @@ function showFiles(){
 
 }
 
+
+// বাংলা ও ইংরেজি লেখা স্বাভাবিক করা
 function normalizeText(text){
 
  return String(text)
- .normalize("NFC")
- .replace(/[\u200B-\u200D\uFEFF]/g,"")
- .replace(/\r\n/g,"\n")
- .replace(/\r/g,"\n")
- .trim();
+  .normalize("NFC")
+  .replace(/[\u200B-\u200D\uFEFF]/g,"")
+  .replace(/\r\n/g,"\n")
+  .replace(/\r/g,"\n")
+  .trim();
 
 }
 
+
+// HTML নিরাপদে দেখানো
 function escapeHTML(value){
 
  return String(value).replace(/[&<>"']/g,c=>({
@@ -258,13 +358,15 @@ function escapeHTML(value){
 
 }
 
+
+// Progress দেখানো
 function setProgress(percent,message){
 
  document.getElementById("progressBar").style.width=
- percent+"%";
+  percent+"%";
 
  document.getElementById("statusText").textContent=
- message;
+  message;
 
 }
 
@@ -286,35 +388,48 @@ async function extractFile(file){
    "ben+eng",
    {
     logger:m=>{
+
      if(m.status==="recognizing text"){
+
       setProgress(
        Math.round((m.progress||0)*100),
        "ছবি থেকে লেখা পড়া হচ্ছে..."
       );
+
      }
+
     }
    }
   );
 
   return result.data.text;
+
  }
 
- // PDF, DOCX, TXT backend extraction
+
+ // PDF, DOCX, TXT Backend
  const formData=new FormData();
+
  formData.append("file",file);
 
- const response=await fetch(API_URL+"/extract",{
-  method:"POST",
-  body:formData
- });
+ const response=await fetch(
+  API_URL+"/extract",
+  {
+   method:"POST",
+   body:formData
+  }
+ );
 
  if(!response.ok){
 
   let message="ফাইল পড়তে সমস্যা হয়েছে।";
 
   try{
+
    const error=await response.json();
+
    message=error.detail||message;
+
   }catch(e){}
 
   throw new Error(file.name+": "+message);
@@ -328,217 +443,173 @@ async function extractFile(file){
 }
 
 
-// দ্রুত তুলনার জন্য আলাদা Web Worker
-function compareInWorker(original,typed){
+// দ্রুত শব্দ তুলনা
+function compareWordsFast(original,typed){
 
- return new Promise((resolve,reject)=>{
+ if(!window.Diff || !Diff.diffArrays){
 
-  const workerCode=`
+  throw new Error(
+   "Comparison Library লোড হয়নি। পেজ Refresh করে আবার চেষ্টা করুন।"
+  );
 
-   importScripts(
-    "https://cdnjs.cloudflare.com/ajax/libs/diff/5.2.0/diff.min.js"
-   );
+ }
 
-   self.onmessage=function(event){
+ const A=normalizeText(original)
+  .split(/\s+/u)
+  .filter(Boolean);
 
-    try{
+ const B=normalizeText(typed)
+  .split(/\s+/u)
+  .filter(Boolean);
 
-     const A=event.data.A;
-     const B=event.data.B;
 
-     let start=0;
+ // শুরুতে একই শব্দগুলো বাদ
+ let start=0;
 
-     // শুরুতে একই থাকা শব্দ বাদ
-     while(
-      start<A.length &&
-      start<B.length &&
-      A[start]===B[start]
-     ){
-      start++;
-     }
+ while(
+  start<A.length &&
+  start<B.length &&
+  A[start]===B[start]
+ ){
 
-     // শেষে একই থাকা শব্দ বাদ
-     let endA=A.length-1;
-     let endB=B.length-1;
+  start++;
 
-     while(
-      endA>=start &&
-      endB>=start &&
-      A[endA]===B[endB]
-     ){
-      endA--;
-      endB--;
-     }
+ }
 
-     const middleA=A.slice(start,endA+1);
-     const middleB=B.slice(start,endB+1);
 
-     let changes=[];
+ // শেষে একই শব্দগুলো বাদ
+ let endA=A.length-1;
+ let endB=B.length-1;
 
-     if(middleA.length===0){
+ while(
+  endA>=start &&
+  endB>=start &&
+  A[endA]===B[endB]
+ ){
 
-      changes=[
-       {value:middleB,added:true}
-      ];
+  endA--;
+  endB--;
 
-     }
+ }
 
-     else if(middleB.length===0){
 
-      changes=[
-       {value:middleA,removed:true}
-      ];
+ // শুধু মাঝের পরিবর্তিত অংশ তুলনা
+ const middleA=A.slice(start,endA+1);
+ const middleB=B.slice(start,endB+1);
 
-     }
+ let changes=[];
 
-     else{
 
-      changes=Diff.diffArrays(
-       middleA,
-       middleB,
-       {timeout:10000}
-      );
+ if(middleA.length===0){
 
-     }
+  changes=[
+   {value:middleB,added:true}
+  ];
 
-     if(!changes){
-      throw new Error(
-       "এই লেখার তুলনা করতে বেশি সময় লাগছে। ছোট অংশে ভাগ করে চেষ্টা করুন।"
-      );
-     }
+ }
 
-     let missing=[];
-     let extra=[];
+ else if(middleB.length===0){
 
-     let originalPosition=start;
-     let typedPosition=start;
+  changes=[
+   {value:middleA,removed:true}
+  ];
 
-     changes.forEach(part=>{
+ }
 
-      const words=part.value||[];
+ else{
 
-      if(part.removed){
+  changes=Diff.diffArrays(
+   middleA,
+   middleB,
+   {timeout:10000}
+  );
 
-       words.forEach(word=>{
+ }
 
-        missing.push({
-         word:word,
-         position:originalPosition+1
-        });
 
-        originalPosition++;
+ if(!changes){
 
-       });
+  throw new Error(
+   "তুলনা করতে বেশি সময় লাগছে। ছোট অংশে ভাগ করে আবার চেষ্টা করুন।"
+  );
 
-      }
+ }
 
-      else if(part.added){
 
-       words.forEach(word=>{
+ const missing=[];
+ const extra=[];
 
-        extra.push({
-         word:word,
-         position:typedPosition+1
-        });
+ let originalPosition=start;
+ let typedPosition=start;
 
-        typedPosition++;
 
-       });
+ changes.forEach(part=>{
 
-      }
+  const words=part.value||[];
 
-      else{
 
-       originalPosition+=words.length;
-       typedPosition+=words.length;
+  // Original থেকে বাদ পড়েছে
+  if(part.removed){
 
-      }
+   words.forEach(word=>{
 
-     });
+    missing.push({
+     word:word,
+     position:originalPosition+1
+    });
 
-     self.postMessage({
+    originalPosition++;
 
-      success:true,
-      originalCount:A.length,
-      typedCount:B.length,
-      missing:missing,
-      extra:extra
-
-     });
-
-    }
-
-    catch(error){
-
-     self.postMessage({
-      success:false,
-      message:error.message||"তুলনা করতে সমস্যা হয়েছে।"
-     });
-
-    }
-
-   };
-
-  `;
-
-  let worker;
-  let workerURL;
-
-  try{
-
-   const blob=new Blob(
-    [workerCode],
-    {type:"application/javascript"}
-   );
-
-   workerURL=URL.createObjectURL(blob);
-   worker=new Worker(workerURL);
-
-   worker.onmessage=function(event){
-
-    worker.terminate();
-    URL.revokeObjectURL(workerURL);
-
-    if(event.data.success){
-     resolve(event.data);
-    }else{
-     reject(new Error(event.data.message));
-    }
-
-   };
-
-   worker.onerror=function(){
-
-    worker.terminate();
-    URL.revokeObjectURL(workerURL);
-
-    reject(
-     new Error("দ্রুত তুলনা চালু করা যায়নি। পেজটি Refresh করে আবার চেষ্টা করুন।")
-    );
-
-   };
-
-   worker.postMessage({
-    A:normalizeText(original).split(/\s+/u).filter(Boolean),
-    B:normalizeText(typed).split(/\s+/u).filter(Boolean)
    });
 
   }
 
-  catch(error){
 
-   if(worker) worker.terminate();
-   if(workerURL) URL.revokeObjectURL(workerURL);
+  // Typed Text-এ অতিরিক্ত
+  else if(part.added){
 
-   reject(error);
+   words.forEach(word=>{
+
+    extra.push({
+     word:word,
+     position:typedPosition+1
+    });
+
+    typedPosition++;
+
+   });
+
+  }
+
+
+  // একই শব্দ
+  else{
+
+   originalPosition+=words.length;
+
+   typedPosition+=words.length;
 
   }
 
  });
 
+
+ return {
+
+  originalCount:A.length,
+
+  typedCount:B.length,
+
+  missing:missing,
+
+  extra:extra
+
+ };
+
 }
 
 
+// রিপোর্ট দেখানো
 function showReport(data){
 
  const report=document.getElementById("report");
@@ -571,18 +642,27 @@ function showReport(data){
 
  `;
 
+
+ // Missing Words
  if(data.missing.length){
 
   html+=`
-  <h3 class="error">❌ Original থেকে বাদ পড়েছে</h3>
+  <h3 class="error">
+  ❌ Original থেকে বাদ পড়েছে
+  </h3>
   `;
 
   data.missing.forEach(item=>{
 
    html+=`
    <div class="result-item">
+
    <b>Original শব্দের অবস্থান: ${item.position}</b>
-   <p class="error">${escapeHTML(item.word)}</p>
+
+   <p class="error">
+   ${escapeHTML(item.word)}
+   </p>
+
    </div>
    `;
 
@@ -590,18 +670,27 @@ function showReport(data){
 
  }
 
+
+ // Extra Words
  if(data.extra.length){
 
   html+=`
-  <h3 class="error">➕ Typed Text-এ অতিরিক্ত আছে</h3>
+  <h3 class="error">
+  ➕ Typed Text-এ অতিরিক্ত আছে
+  </h3>
   `;
 
   data.extra.forEach(item=>{
 
    html+=`
    <div class="result-item">
+
    <b>Typed শব্দের অবস্থান: ${item.position}</b>
-   <p class="error">${escapeHTML(item.word)}</p>
+
+   <p class="error">
+   ${escapeHTML(item.word)}
+   </p>
+
    </div>
    `;
 
@@ -609,7 +698,12 @@ function showReport(data){
 
  }
 
- if(!data.missing.length&&!data.extra.length){
+
+ // সব ঠিক থাকলে
+ if(
+  !data.missing.length &&
+  !data.extra.length
+ ){
 
   html+=`
   <h3 class="success">
@@ -619,12 +713,15 @@ function showReport(data){
 
  }
 
+
  html+=`
+
  <p class="muted">
  অবস্থান বলতে শব্দের ক্রমিক নম্বর বোঝানো হয়েছে।
  এটি এখনো Word-এর প্রকৃত পৃষ্ঠা নম্বর নয়।
  OCR-এর ভুলও তুলনার ফলে প্রভাব ফেলতে পারে।
  </p>
+
  `;
 
  report.innerHTML=html;
@@ -632,42 +729,70 @@ function showReport(data){
 }
 
 
-// Main comparison
+// Main Comparison
 async function startCompare(){
 
- const button=document.getElementById("compareButton");
- const report=document.getElementById("report");
- const files=Array.from(fileInput.files);
- const typed=document.getElementById("typedText").value;
- const typingWrap=document.getElementById("typingWrap");
+ const button=
+  document.getElementById("compareButton");
+
+ const report=
+  document.getElementById("report");
+
+ const files=
+  Array.from(fileInput.files);
+
+ const typed=
+  document.getElementById("typedText").value;
+
+ const typingWrap=
+  document.getElementById("typingWrap");
+
 
  if(!files.length){
+
   alert("কমপক্ষে একটি Original ফাইল নির্বাচন করুন।");
+
   return;
+
  }
+
 
  if(!typed.trim()){
+
   alert("Typed Text বক্সে লেখা পেস্ট করুন।");
+
   return;
+
  }
+
 
  if(files.length>50){
+
   alert("একবারে সর্বোচ্চ ৫০টি ফাইল নির্বাচন করুন।");
+
   return;
+
  }
 
+
  button.disabled=true;
+
  button.textContent="Processing...";
 
  typingWrap.classList.add("scanning");
 
  document.getElementById("progressArea").style.display="block";
- report.innerHTML='<p class="muted">তুলনা চলছে...</p>';
+
+ report.innerHTML=
+  '<p class="muted">তুলনা চলছে...</p>';
+
 
  try{
 
   let originalText="";
 
+
+  // Original ফাইলগুলো পড়া
   for(let i=0;i<files.length;i++){
 
    setProgress(
@@ -676,43 +801,75 @@ async function startCompare(){
     " ("+(i+1)+"/"+files.length+")"
    );
 
+
    const text=await extractFile(files[i]);
 
+
    if(!text.trim()){
+
     throw new Error(
      files[i].name+" থেকে কোনো লেখা পাওয়া যায়নি।"
     );
+
    }
+
 
    originalText+="\n"+text+"\n";
 
   }
 
-  setProgress(85,"দ্রুত শব্দ তুলনা করা হচ্ছে...");
 
-  // Worker-এ তুলনা
-  const result=await compareInWorker(
+  setProgress(
+   85,
+   "তুলনার প্রস্তুতি চলছে..."
+  );
+
+
+  // Browser-কে অ্যানিমেশন দেখানোর সুযোগ
+  await new Promise(resolve=>{
+   requestAnimationFrame(()=>{
+    requestAnimationFrame(resolve);
+   });
+  });
+
+
+  setProgress(
+   90,
+   "দ্রুত শব্দ তুলনা করা হচ্ছে..."
+  );
+
+
+  // Worker ছাড়া সরাসরি তুলনা
+  const result=compareWordsFast(
    originalText,
    typed
   );
 
-  setProgress(100,"তুলনা সম্পন্ন হয়েছে।");
+
+  setProgress(
+   100,
+   "তুলনা সম্পন্ন হয়েছে।"
+  );
+
 
   showReport(result);
+
 
  }catch(error){
 
   console.error(error);
 
   report.innerHTML=
-  '<p class="error">'+escapeHTML(error.message)+
-  '</p>';
+   '<p class="error">'+
+   escapeHTML(error.message)+
+   '</p>';
 
  }finally{
 
   typingWrap.classList.remove("scanning");
 
   button.disabled=false;
+
   button.textContent="Compare Documents";
 
  }
