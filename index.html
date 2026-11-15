@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="bn">
 <head>
@@ -131,7 +130,7 @@ select{width:100%;padding:10px;border:1px solid #ccd5e2;border-radius:7px;backgr
 </select>
 </div>
 
-<div class="setting" id="manualLanguageSetting">
+<div class="setting">
 <label for="ocrLanguages">Manual OCR Languages</label>
 <select id="ocrLanguages">
 <option value="ben+eng" selected>বাংলা + English</option>
@@ -205,7 +204,6 @@ const fileInput=document.getElementById("originalFiles");
 const compareButton=document.getElementById("compareButton");
 const ocrModeSelect=document.getElementById("ocrMode");
 const languageSelect=document.getElementById("ocrLanguages");
-const manualLanguageSetting=document.getElementById("manualLanguageSetting");
 const mathModeCheckbox=document.getElementById("mathMode");
 
 let ocrWorker=null;
@@ -223,7 +221,7 @@ compareButton.addEventListener("click",startCompare);
 ocrModeSelect.addEventListener("change",updateLanguageMode);
 
 function updateLanguageMode(){
-manualLanguageSetting.classList.toggle(
+languageSelect.parentElement.classList.toggle(
 "hidden",
 ocrModeSelect.value!=="manual"
 );
@@ -274,7 +272,6 @@ return String(value).replace(/[&<>"']/g,c=>({
 function setProgress(percent,message){
 document.getElementById("progressBar").style.width=
 Math.max(0,Math.min(100,percent))+"%";
-
 document.getElementById("statusText").textContent=message;
 }
 
@@ -289,6 +286,82 @@ return (String(text).match(regex)||[]).length;
 }
 
 /* =====================================
+   OCR TEXT QUALITY ANALYSIS
+===================================== */
+
+function analyzeOCRText(text){
+
+const value=normalizeText(text);
+
+const bengali=countMatches(value,/[\u0980-\u09FF]/g);
+const arabic=countMatches(value,/[\u0600-\u06FF]/g);
+const latin=countMatches(value,/[A-Za-z]/g);
+const digits=countMatches(value,/[0-9০-৯]/g);
+const replacement=countMatches(value,/�|□|▯/g);
+
+const total=value.replace(/\s/g,"").length;
+
+const suspiciousLatin=countMatches(value,/[A-Z]{3,}/g);
+const symbols=countMatches(value,/[^\u0980-\u09FF\u0600-\u06FFA-Za-z0-9০-৯\s.,;:!?()[\]{}%+\-=\/]/g);
+
+return {
+value,
+bengali,
+arabic,
+latin,
+digits,
+replacement,
+total,
+suspiciousLatin,
+symbols
+};
+}
+
+/*
+বাংলা OCR-এর ক্ষেত্রে বাংলা অক্ষরকে বেশি গুরুত্ব দেওয়া হবে।
+English পৃষ্ঠার ক্ষেত্রে Latin অক্ষরও গ্রহণযোগ্য থাকবে।
+*/
+
+function getOCRScore(text,expected="ben"){
+
+const a=analyzeOCRText(text);
+
+if(!a.total)return -1000;
+
+let score=0;
+
+if(expected==="ben"){
+
+score+=a.bengali*4;
+score+=a.latin*0.9;
+score+=a.digits*1.2;
+score-=a.replacement*12;
+score-=a.suspiciousLatin*0.5;
+
+}else if(expected==="arabic"){
+
+score+=a.arabic*4;
+score+=a.latin*0.9;
+score+=a.digits*1.2;
+score-=a.replacement*12;
+
+}else{
+
+score+=a.latin*2;
+score+=a.bengali*1.5;
+score+=a.arabic*1.5;
+score+=a.digits;
+score-=a.replacement*12;
+}
+
+score+=Math.min(a.total,1000)*0.02;
+
+if(a.total<20)score-=40;
+
+return score;
+}
+
+/* =====================================
    PDF TEXT QUALITY CHECK
 ===================================== */
 
@@ -298,6 +371,7 @@ const value=normalizeText(text);
 
 const bengaliChars=countMatches(value,/[\u0980-\u09FF]/g);
 const totalChars=value.replace(/\s/g,"").length;
+const words=value.split(/\s+/).filter(Boolean).length;
 
 const suspiciousT=countMatches(value,/ট/g);
 const suspiciousD=countMatches(value,/ড/g);
@@ -305,30 +379,41 @@ const suspiciousD=countMatches(value,/ড/g);
 const tRatio=bengaliChars?suspiciousT/bengaliChars:0;
 const dRatio=bengaliChars?suspiciousD/bengaliChars:0;
 
-const words=value.split(/\s+/).filter(Boolean).length;
+const latin=countMatches(value,/[A-Za-z]/g);
+const uppercase=countMatches(value,/[A-Z]/g);
+const replacement=countMatches(value,/�|□|▯/g);
+const strange=countMatches(value,/[|~^`]/g);
 
-const hasBengali=bengaliChars>=20;
+const uppercaseRatio=latin?uppercase/latin:0;
 
-const tooShort=
-totalChars<35 || words<7;
+const tooShort=totalChars<35||words<7;
 
 const abnormalBengali=
-hasBengali && (
-tRatio>0.055 ||
+bengaliChars>=20&&(
+tRatio>0.055||
 dRatio>0.045
 );
 
-const hasReplacement=
-/�|□|▯/.test(value);
+const suspiciousLatin=
+latin>35&&
+bengaliChars===0&&
+uppercaseRatio>0.62&&
+strange>4;
+
+const hasReplacement=replacement>0;
 
 const suspicious=
-tooShort || abnormalBengali || hasReplacement;
+tooShort||
+abnormalBengali||
+hasReplacement||
+suspiciousLatin;
 
 let reason="";
 
 if(tooShort)reason="লেখা খুব কম পাওয়া গেছে";
 else if(abnormalBengali)reason="বাংলা ফন্ট/এনকোডিং বিকৃতির সম্ভাবনা";
 else if(hasReplacement)reason="অজানা অক্ষর পাওয়া গেছে";
+else if(suspiciousLatin)reason="PDF-এর টেক্সট এনকোডিং সন্দেহজনক";
 
 return {
 suspicious,
@@ -342,31 +427,24 @@ words
 
 function textQualityScore(text){
 
-const value=normalizeText(text);
+const a=analyzeOCRText(text);
 
-if(!value)return 0;
-
-const bengali=countMatches(value,/[\u0980-\u09FF]/g);
-const suspiciousT=countMatches(value,/ট/g);
-const suspiciousD=countMatches(value,/ড/g);
-const replacement=countMatches(value,/�|□|▯/g);
-
-const total=value.replace(/\s/g,"").length;
-const words=value.split(/\s+/).filter(Boolean).length;
+if(!a.total)return 0;
 
 let score=0;
 
-score+=Math.min(words,100)*0.15;
-score+=Math.min(total,1000)*0.01;
+score+=Math.min(a.total,1000)*0.02;
+score+=Math.min(a.bengali,500)*0.15;
+score+=Math.min(a.latin,500)*0.05;
 
-if(bengali){
-score-=((suspiciousT/bengali)*100)*1.4;
-score-=((suspiciousD/bengali)*100)*0.8;
+if(a.bengali){
+score-=countMatches(a.value,/ট/g)*0.8;
+score-=countMatches(a.value,/ড/g)*0.5;
 }
 
-score-=replacement*5;
+score-=a.replacement*10;
 
-if(total<30)score-=20;
+if(a.total<30)score-=20;
 
 return score;
 }
@@ -391,7 +469,7 @@ return [...new Set(parts)].join("+");
 }
 
 function getDefaultAutoLanguages(){
-return mathModeCheckbox.checked?"eng":"ben+eng";
+return addMathSupport("ben+eng");
 }
 
 /* =====================================
@@ -405,13 +483,13 @@ if(osdWorker)return osdWorker;
 
 try{
 
-setProgress(8,"Auto Language Detection প্রস্তুত হচ্ছে...");
+setProgress(5,"Auto Language Detection প্রস্তুত হচ্ছে...");
 
 osdWorker=await Tesseract.createWorker("osd",1,{
 logger:m=>{
 if(m.status==="loading language traineddata"){
 setProgress(
-Math.round((m.progress||0)*10),
+Math.round((m.progress||0)*8),
 "Language Detection Data লোড হচ্ছে..."
 );
 }
@@ -423,7 +501,6 @@ return osdWorker;
 }catch(error){
 
 console.warn("OSD model unavailable:",error);
-
 osdUnavailable=true;
 osdWorker=null;
 
@@ -435,29 +512,18 @@ function mapDetectedScript(script){
 
 const value=String(script||"").toLowerCase();
 
-if(value.includes("beng"))return "ben+eng";
-
-if(
-value.includes("arab")||
+if(value.includes("arab")||
 value.includes("syri")||
-value.includes("thaana")
-){
-return "ara+urd+fas+eng";
+value.includes("thaana")){
+return addMathSupport("ara+urd+fas+eng");
 }
 
-if(value.includes("latin")||value.includes("greek")){
-return "eng";
-}
-
-if(
-value.includes("deva")||
-value.includes("cyrillic")||
-value.includes("han")||
-value.includes("japan")||
-value.includes("hangul")
-){
-return "eng";
-}
+/*
+বাংলা শনাক্ত না হলেও Auto Mode-এর
+Default হিসেবে ben+eng রাখা হচ্ছে।
+OSD ভুল করে Latin বললে English-only
+OCR-এ চলে যাবে না।
+*/
 
 return getDefaultAutoLanguages();
 }
@@ -488,7 +554,7 @@ console.warn("Automatic detection failed:",error);
 }
 }
 
-return addMathSupport(detected);
+return detected;
 }
 
 /* =====================================
@@ -600,9 +666,7 @@ bitmap.close();
 try{
 
 const imageData=ctx.getImageData(
-0,0,
-canvas.width,
-canvas.height
+0,0,canvas.width,canvas.height
 );
 
 const pixels=imageData.data;
@@ -620,7 +684,6 @@ let gray=
 0.114*pixels[i+2];
 
 gray=(gray-128)*contrast+128;
-
 gray=Math.max(0,Math.min(255,gray));
 
 pixels[i]=gray;
@@ -645,21 +708,154 @@ return result||blob;
 }
 
 /* =====================================
-   OCR IMAGE
+   OCR RECOGNITION WITH VALIDATION
 ===================================== */
 
-async function recognizeImage(blob){
-
-const languages=await detectLanguages(blob);
+async function runOCR(blob,languages){
 
 const worker=await getOCRWorker(languages);
 
+const result=await worker.recognize(blob);
+
+return normalizeText(result.data.text||"");
+}
+
+async function recognizeImage(blob){
+
 const enhanced=await preprocessImage(blob);
 
-const result=await worker.recognize(enhanced);
+const languages=await detectLanguages(blob);
 
-return result.data.text||"";
+let firstText="";
+
+try{
+
+firstText=await runOCR(enhanced,languages);
+
+}catch(error){
+
+console.warn("Primary OCR failed:",languages,error);
+
 }
+
+/*
+Manual Mode:
+ব্যবহারকারী যে ভাষা নির্বাচন করেছেন,
+সেই ভাষাতেই OCR ফলাফল রাখা হবে।
+*/
+
+if(ocrModeSelect.value==="manual"){
+return firstText;
+}
+
+/*
+Auto Mode:
+বাংলা ও English-এর OCR প্রথমে পরীক্ষা।
+বাংলা কম পাওয়া গেলে শুধু বাংলা দিয়ে
+দ্বিতীয়বার চেষ্টা করা হবে।
+*/
+
+const arabicMode=languages.includes("ara");
+
+if(arabicMode){
+
+const firstScore=getOCRScore(firstText,"arabic");
+
+if(firstScore<10){
+
+try{
+
+const alternative=await runOCR(
+enhanced,
+addMathSupport("ara+urd+fas")
+);
+
+const alternativeScore=getOCRScore(
+alternative,
+"arabic"
+);
+
+if(alternativeScore>firstScore){
+firstText=alternative;
+}
+
+}catch(error){
+console.warn("Arabic OCR fallback:",error);
+}
+}
+
+return firstText;
+}
+
+const firstAnalysis=analyzeOCRText(firstText);
+
+const totalScript=
+firstAnalysis.bengali+
+firstAnalysis.latin+
+firstAnalysis.digits;
+
+const bengaliRatio=
+totalScript?
+firstAnalysis.bengali/totalScript:
+0;
+
+/*
+বাংলা লেখা থাকার সম্ভাবনা থাকলেও
+প্রথম OCR-এ বাংলা অক্ষর না এলে
+শুধু বাংলা OCR চালানো হবে।
+*/
+
+const shouldRetryBengali=
+firstText.length<25||
+firstAnalysis.replacement>0||
+(
+firstAnalysis.bengali<15&&
+firstAnalysis.latin>20
+)||
+(
+firstAnalysis.bengali>=15&&
+bengaliRatio<0.12
+);
+
+if(!shouldRetryBengali){
+return firstText;
+}
+
+let secondText="";
+
+try{
+
+setProgress(65,"বাংলা OCR পুনরায় যাচাই করা হচ্ছে...");
+
+secondText=await runOCR(
+enhanced,
+addMathSupport("ben")
+);
+
+}catch(error){
+
+console.warn("Bengali-only OCR failed:",error);
+
+return firstText;
+}
+
+const firstScore=getOCRScore(firstText,"ben");
+const secondScore=getOCRScore(secondText,"ben");
+
+console.log("OCR quality check:",{
+primaryLanguage:languages,
+primaryScore:firstScore,
+bengaliOnlyScore:secondScore,
+primaryBengali:firstAnalysis.bengali,
+retryBengali:analyzeOCRText(secondText).bengali
+});
+
+return secondScore>firstScore?secondText:firstText;
+}
+
+/* =====================================
+   IMAGE EXTRACTION
+===================================== */
 
 async function extractImage(file){
 
@@ -705,12 +901,7 @@ return blob;
 }
 
 /* =====================================
-   PDF EXTRACTION - FIXED
-
-   গুরুত্বপূর্ণ:
-   পৃষ্ঠা নম্বর, OCR Status বা
-   অন্য কোনো কৃত্রিম Label আর
-   Original Text-এর সঙ্গে যোগ হবে না।
+   PDF EXTRACTION
 ===================================== */
 
 async function extractPDF(file){
@@ -786,7 +977,6 @@ scannedText=await recognizeImage(blob);
 }catch(error){
 
 console.error("Page OCR failed:",pageNo,error);
-
 failedOCRPages++;
 }
 
@@ -810,9 +1000,9 @@ Math.max(30,pageText.replace(/\s/g,"").length*0.35),
 );
 
 if(
-enoughOCRText &&
+enoughOCRText&&
 (
-qualityInfo.suspicious ||
+qualityInfo.suspicious||
 newScore>=oldScore
 )
 ){
@@ -821,27 +1011,17 @@ pageText=scannedText;
 ocrPages++;
 
 }else{
-
 directPages++;
 }
 }
 
 }else{
-
 directPages++;
 }
 
 }else{
-
 directPages++;
 }
-
-/*
-সংশোধিত অংশ:
-এখানে আর পৃষ্ঠা নম্বর বা OCR Label
-মূল লেখার সঙ্গে যোগ করা হচ্ছে না।
-শুধু PDF-এর প্রকৃত Text রাখা হচ্ছে।
-*/
 
 if(pageText.trim()){
 output.push(pageText.trim());
@@ -856,7 +1036,6 @@ directPages,
 failedOCRPages
 });
 
-/* পৃষ্ঠার লেখা আলাদা লাইনে রাখা হবে, কিন্তু কোনো Label নয় */
 return output.join("\n\n");
 }
 
@@ -902,12 +1081,6 @@ const blob=await zip.files[path].async("blob");
 if(blob.size>0){
 
 const imageText=await recognizeImage(blob);
-
-/*
-ছবির ফাইলের নাম বা OCR Label
-তুলনার Text-এ যোগ করা হবে না।
-শুধু ছবির শনাক্ত করা প্রকৃত লেখা যোগ হবে।
-*/
 
 if(imageText.trim()){
 text+="\n\n"+imageText.trim();
@@ -1008,17 +1181,11 @@ currentOption=detectedOption;
 tokens.push({
 
 word,
-
 key:word.normalize("NFC"),
-
 lineIndex,
-
 wordInLine,
-
 position:tokens.length+1,
-
 questionNumber:currentQuestion,
-
 optionNumber:currentOption
 
 });
@@ -1072,11 +1239,8 @@ part.value.forEach(item=>{
 missing.push({
 
 word:item.word,
-
 position:originalIndex+1,
-
 lineIndex:item.lineIndex,
-
 wordInLine:item.wordInLine
 
 });
@@ -1092,15 +1256,10 @@ part.value.forEach(item=>{
 extra.push({
 
 word:item.word,
-
 position:typedIndex+1,
-
 lineIndex:item.lineIndex,
-
 wordInLine:item.wordInLine,
-
 questionNumber:item.questionNumber,
-
 optionNumber:item.optionNumber
 
 });
@@ -1121,13 +1280,9 @@ typedIndex+=part.value.length;
 return {
 
 originalCount:A.length,
-
 typedCount:B.length,
-
 missing,
-
 extra,
-
 originalLines:originalData.lines
 
 };
@@ -1169,13 +1324,9 @@ const groups=[];
 if(starts[0].lineIndex>0){
 
 groups.push({
-
 label:"প্রশ্ন নম্বরের আগের অংশ",
-
 start:0,
-
 end:starts[0].lineIndex-1
-
 });
 
 }
@@ -1185,7 +1336,6 @@ starts.forEach((item,index)=>{
 groups.push({
 
 label:"প্রশ্ন "+item.number,
-
 start:item.lineIndex,
 
 end:
@@ -1207,7 +1357,6 @@ return groups;
 function renderQuestionGroup(group,data,missingPositions){
 
 let html="";
-
 let globalPosition=1;
 
 for(
@@ -1382,11 +1531,8 @@ if(!questionGroups.has(question)){
 questionGroups.set(question,{
 
 question,
-
 questionItems:[],
-
 options:new Map(),
-
 positions:[]
 
 });
@@ -1542,7 +1688,6 @@ return;
 }
 
 compareButton.disabled=true;
-
 compareButton.textContent="Processing...";
 
 typingWrap.classList.add("scanning");
@@ -1560,11 +1705,8 @@ let originalText=originalInput;
 for(let i=0;i<files.length;i++){
 
 setProgress(
-
 Math.round((i/files.length)*70),
-
 `ফাইল পড়া হচ্ছে: ${files[i].name} (${i+1}/${files.length})`
-
 );
 
 const extractedText=await extractFile(files[i]);
@@ -1607,7 +1749,6 @@ showReport(result);
 console.error(error);
 
 report.innerHTML=
-
 '<p class="error">'+
 escapeHTML(error.message||"অজানা সমস্যা হয়েছে।")+
 '</p>';
@@ -1617,7 +1758,6 @@ escapeHTML(error.message||"অজানা সমস্যা হয়েছে।
 typingWrap.classList.remove("scanning");
 
 compareButton.disabled=false;
-
 compareButton.textContent="Compare Documents";
 
 }
